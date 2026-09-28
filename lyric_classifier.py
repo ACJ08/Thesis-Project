@@ -4,38 +4,39 @@ import random
 
 import numpy as np
 import pandas as pd
+
 from tqdm import tqdm
 
 import torch
 import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader
 
-from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, classification_report
 
 from transformers import RobertaTokenizer, RobertaModel
 from torch.optim import AdamW
 
-
-#Notes: LIME and SHAP are still missing
+# Explainability
+from lime.lime_text import LimeTextExplainer
+import shap
 
 
 # ============================================================
 # CONFIGURATION
 # ============================================================
 
-CSV_FILE = "lyrics_dataset.csv"
+TRAIN_CSV_FILE = "train.csv"
+VAL_CSV_FILE = "validation.csv"
+TEST_CSV_FILE = "test.csv"
 
 MODEL_NAME = "roberta-base"
 
 MAX_LENGTH = 512
-
 BATCH_SIZE = 2
 EPOCHS = 3
-
 LEARNING_RATE = 2e-5
 
-RANDOM_SEED = 67 #WEIIIIIII
+RANDOM_SEED = 67
 
 MODEL_SAVE_PATH = "saved_model/lyric_classifier.pt"
 
@@ -92,8 +93,9 @@ def clean_lyrics(text):
     """
     Basic lyric preprocessing.
 
-    We intentionally avoid aggressive preprocessing because
-    RoBERTa benefits from keeping natural language information.
+    RoBERTa works well with natural language, so we avoid
+    aggressive preprocessing such as removing stopwords
+    or stemming words.
     """
 
     if not isinstance(text, str):
@@ -116,16 +118,20 @@ def clean_lyrics(text):
 
 
 # ============================================================
-# LOAD DATASET
+# LOAD DATASETS
 # ============================================================
 
-print("\nLoading dataset...")
+print("\nLoading datasets...")
 
-df = pd.read_csv(CSV_FILE)
+train_df = pd.read_csv(TRAIN_CSV_FILE)
+val_df = pd.read_csv(VAL_CSV_FILE)
+test_df = pd.read_csv(TEST_CSV_FILE)
 
 
-# Check required columns
-# Subject to change should csv be different
+# ============================================================
+# CHECK REQUIRED COLUMNS
+# ============================================================
+
 required_columns = [
     "song_name",
     "artist",
@@ -134,57 +140,94 @@ required_columns = [
 ]
 
 for column in required_columns:
-    if column not in df.columns:
+
+    if column not in train_df.columns:
         raise ValueError(
-            f"Dataset is missing required column: {column}"
+            f"Training dataset is missing required column: {column}"
+        )
+
+    if column not in val_df.columns:
+        raise ValueError(
+            f"Validation dataset is missing required column: {column}"
+        )
+
+    if column not in test_df.columns:
+        raise ValueError(
+            f"Test dataset is missing required column: {column}"
         )
 
 
-# Clean lyrics
-df["text"] = df["text"].apply(clean_lyrics)
+# ============================================================
+# PREPROCESS DATASETS
+# ============================================================
+
+train_df["text"] = train_df["text"].apply(clean_lyrics)
+val_df["text"] = val_df["text"].apply(clean_lyrics)
+test_df["text"] = test_df["text"].apply(clean_lyrics)
 
 
-# Remove empty lyrics
-df = df[df["text"].str.len() > 0].copy()
+# ============================================================
+# REMOVE EMPTY LYRICS
+# ============================================================
 
+train_df = train_df[
+    train_df["text"].str.len() > 0
+].copy()
 
-# Remove invalid labels
-# Basic. Subject to update according to received CSV. Will not be removed for safety.
-df = df[
-    df["explicitness"].isin(LABEL2ID.keys())
+val_df = val_df[
+    val_df["text"].str.len() > 0
+].copy()
+
+test_df = test_df[
+    test_df["text"].str.len() > 0
 ].copy()
 
 
-# Convert labels to integers
-df["label"] = df["explicitness"].map(LABEL2ID)
+# ============================================================
+# REMOVE INVALID LABELS
+# ============================================================
 
+train_df = train_df[
+    train_df["explicitness"].isin(LABEL2ID.keys())
+].copy()
 
-print("Number of songs:", len(df))
+val_df = val_df[
+    val_df["explicitness"].isin(LABEL2ID.keys())
+].copy()
 
-print("\nClass distribution:")
-print(df["explicitness"].value_counts())
+test_df = test_df[
+    test_df["explicitness"].isin(LABEL2ID.keys())
+].copy()
 
 
 # ============================================================
-# TRAIN / VALIDATION SPLIT
+# CONVERT LABELS TO NUMBERS
 # ============================================================
 
-# Basic.
-# Will instead use direct dfs for the separate csv instead of actual separation.
-
-train_df, val_df = train_test_split(
-    df,
-    test_size=0.2,
-    random_state=RANDOM_SEED,
-    stratify=df["label"]
-)
-
-train_df = train_df.reset_index(drop=True)
-val_df = val_df.reset_index(drop=True)
+train_df["label"] = train_df["explicitness"].map(LABEL2ID)
+val_df["label"] = val_df["explicitness"].map(LABEL2ID)
+test_df["label"] = test_df["explicitness"].map(LABEL2ID)
 
 
-print("\nTraining samples:", len(train_df))
-print("Validation samples:", len(val_df))
+# ============================================================
+# DATASET INFORMATION
+# ============================================================
+
+print("\nTraining songs:", len(train_df))
+print("Validation songs:", len(val_df))
+print("Test songs:", len(test_df))
+
+
+print("\nTraining class distribution:")
+print(train_df["explicitness"].value_counts())
+
+
+print("\nValidation class distribution:")
+print(val_df["explicitness"].value_counts())
+
+
+print("\nTest class distribution:")
+print(test_df["explicitness"].value_counts())
 
 
 # ============================================================
@@ -256,6 +299,11 @@ val_dataset = LyricsDataset(
     tokenizer
 )
 
+test_dataset = LyricsDataset(
+    test_df,
+    tokenizer
+)
+
 
 # ============================================================
 # CREATE DATALOADERS
@@ -273,9 +321,19 @@ val_loader = DataLoader(
     shuffle=False
 )
 
+test_loader = DataLoader(
+    test_dataset,
+    batch_size=BATCH_SIZE,
+    shuffle=False
+)
+
 
 # ============================================================
 # MODEL
+# ============================================================
+#
+# RoBERTa → CNN → BiLSTM → Classifier
+#
 # ============================================================
 
 class RoBERTaCNNLSTM(nn.Module):
@@ -290,7 +348,6 @@ class RoBERTaCNNLSTM(nn.Module):
 
         super().__init__()
 
-
         # ----------------------------------------------------
         # RoBERTa
         # ----------------------------------------------------
@@ -302,7 +359,6 @@ class RoBERTaCNNLSTM(nn.Module):
         roberta_hidden = (
             self.roberta.config.hidden_size
         )
-
 
         # ----------------------------------------------------
         # CNN
@@ -324,11 +380,12 @@ class RoBERTaCNNLSTM(nn.Module):
 
         self.relu = nn.ReLU()
 
-        self.dropout = nn.Dropout(dropout)
-
+        self.dropout = nn.Dropout(
+            dropout
+        )
 
         # ----------------------------------------------------
-        # BiLSTM. Will change to LSTM later.
+        # BiLSTM
         # ----------------------------------------------------
 
         self.lstm = nn.LSTM(
@@ -344,7 +401,6 @@ class RoBERTaCNNLSTM(nn.Module):
             )
         )
 
-
         # ----------------------------------------------------
         # CLASSIFIER
         # ----------------------------------------------------
@@ -358,7 +414,9 @@ class RoBERTaCNNLSTM(nn.Module):
 
             nn.ReLU(),
 
-            nn.Dropout(dropout),
+            nn.Dropout(
+                dropout
+            ),
 
             nn.Linear(
                 128,
@@ -373,65 +431,54 @@ class RoBERTaCNNLSTM(nn.Module):
         attention_mask
     ):
 
-        # ====================================================
+        # ----------------------------------------------------
         # RoBERTa
-        # ====================================================
+        # ----------------------------------------------------
 
         roberta_output = self.roberta(
             input_ids=input_ids,
             attention_mask=attention_mask
         )
 
-        # Shape:
-        #
-        # [batch, sequence_length, 768]
-        #
-
         x = roberta_output.last_hidden_state
 
+        # Shape:
+        # [batch, sequence_length, 768]
 
-        # ====================================================
+
+        # ----------------------------------------------------
         # CNN
-        # ====================================================
+        # ----------------------------------------------------
 
         # Conv1D expects:
-        #
         # [batch, channels, sequence]
-        #
 
         x = x.transpose(1, 2)
 
         x = self.conv1(x)
-
         x = self.relu(x)
-
         x = self.dropout(x)
 
         x = self.conv2(x)
-
         x = self.relu(x)
-
         x = self.dropout(x)
 
-
         # Return to:
-        #
         # [batch, sequence, features]
-        #
 
         x = x.transpose(1, 2)
 
 
-        # ====================================================
+        # ----------------------------------------------------
         # BiLSTM
-        # ====================================================
+        # ----------------------------------------------------
 
         x, _ = self.lstm(x)
 
 
-        # ====================================================
+        # ----------------------------------------------------
         # GLOBAL POOLING
-        # ====================================================
+        # ----------------------------------------------------
 
         x = torch.mean(
             x,
@@ -439,9 +486,9 @@ class RoBERTaCNNLSTM(nn.Module):
         )
 
 
-        # ====================================================
+        # ----------------------------------------------------
         # CLASSIFIER
-        # ====================================================
+        # ----------------------------------------------------
 
         logits = self.classifier(x)
 
@@ -496,12 +543,10 @@ def train_one_epoch(
     predictions = []
     actual = []
 
-
     progress = tqdm(
         loader,
         desc="Training"
     )
-
 
     for batch in progress:
 
@@ -555,11 +600,15 @@ def train_one_epoch(
 
 
         predictions.extend(
-            preds.detach().cpu().numpy()
+            preds.detach()
+            .cpu()
+            .numpy()
         )
 
         actual.extend(
-            labels.detach().cpu().numpy()
+            labels.detach()
+            .cpu()
+            .numpy()
         )
 
 
@@ -572,12 +621,10 @@ def train_one_epoch(
         total_loss / len(loader)
     )
 
-
     accuracy = accuracy_score(
         actual,
         predictions
     )
-
 
     return avg_loss, accuracy
 
@@ -599,7 +646,6 @@ def validate(
     predictions = []
     actual = []
 
-
     with torch.no_grad():
 
         for batch in tqdm(
@@ -620,24 +666,20 @@ def validate(
             ].to(DEVICE)
 
 
-            # Forward pass
             logits = model(
                 input_ids,
                 attention_mask
             )
 
 
-            # Validation loss
             loss = criterion(
                 logits,
                 labels
             )
 
-
             total_loss += loss.item()
 
 
-            # Predictions
             preds = torch.argmax(
                 logits,
                 dim=1
@@ -657,12 +699,10 @@ def validate(
         total_loss / len(loader)
     )
 
-
     accuracy = accuracy_score(
         actual,
         predictions
     )
-
 
     return (
         avg_loss,
@@ -673,13 +713,107 @@ def validate(
 
 
 # ============================================================
+# TEST SET EVALUATION
+# ============================================================
+
+def evaluate_test_set(
+    model,
+    loader
+):
+
+    model.eval()
+
+    predictions = []
+    actual = []
+
+    with torch.no_grad():
+
+        for batch in tqdm(
+            loader,
+            desc="Testing"
+        ):
+
+            input_ids = batch[
+                "input_ids"
+            ].to(DEVICE)
+
+            attention_mask = batch[
+                "attention_mask"
+            ].to(DEVICE)
+
+            labels = batch[
+                "label"
+            ].to(DEVICE)
+
+
+            logits = model(
+                input_ids,
+                attention_mask
+            )
+
+
+            preds = torch.argmax(
+                logits,
+                dim=1
+            )
+
+
+            predictions.extend(
+                preds.cpu().numpy()
+            )
+
+            actual.extend(
+                labels.cpu().numpy()
+            )
+
+
+    # --------------------------------------------------------
+    # METRICS
+    # --------------------------------------------------------
+
+    accuracy = accuracy_score(
+        actual,
+        predictions
+    )
+
+
+    print("\n================================")
+    print("FINAL TEST SET RESULTS")
+    print("================================")
+
+    print(
+        f"\nTest Accuracy: {accuracy:.4f}"
+    )
+
+
+    print("\nClassification Report:")
+
+    print(
+        classification_report(
+            actual,
+            predictions,
+            target_names=[
+                "Safe",
+                "Mild",
+                "Explicit"
+            ],
+            zero_division=0
+        )
+    )
+
+
+    return actual, predictions
+
+
+# ============================================================
 # TRAINING LOOP
 # ============================================================
 
-print("\nStarting training...\n")
+print(
+    "\nStarting training...\n"
+)
 
-
-best_val_accuracy = 0
+best_val_accuracy = 0.0
 
 
 for epoch in range(EPOCHS):
@@ -691,7 +825,10 @@ for epoch in range(EPOCHS):
     )
 
 
-    # Training
+    # --------------------------------------------------------
+    # TRAIN
+    # --------------------------------------------------------
+
     train_loss, train_accuracy = train_one_epoch(
         model,
         train_loader,
@@ -700,12 +837,15 @@ for epoch in range(EPOCHS):
     )
 
 
-    # Validation
+    # --------------------------------------------------------
+    # VALIDATE
+    # --------------------------------------------------------
+
     (
         val_loss,
         val_accuracy,
-        actual,
-        predictions
+        val_actual,
+        val_predictions
     ) = validate(
         model,
         val_loader,
@@ -714,23 +854,19 @@ for epoch in range(EPOCHS):
 
 
     print(
-        f"\nTrain Loss: "
-        f"{train_loss:.4f}"
+        f"\nTrain Loss: {train_loss:.4f}"
     )
 
     print(
-        f"Train Accuracy: "
-        f"{train_accuracy:.4f}"
+        f"Train Accuracy: {train_accuracy:.4f}"
     )
 
     print(
-        f"Validation Loss: "
-        f"{val_loss:.4f}"
+        f"Validation Loss: {val_loss:.4f}"
     )
 
     print(
-        f"Validation Accuracy: "
-        f"{val_accuracy:.4f}"
+        f"Validation Accuracy: {val_accuracy:.4f}"
     )
 
 
@@ -742,128 +878,24 @@ for epoch in range(EPOCHS):
 
         best_val_accuracy = val_accuracy
 
-
         os.makedirs(
             "saved_model",
             exist_ok=True
         )
-
 
         torch.save(
             model.state_dict(),
             MODEL_SAVE_PATH
         )
 
-
-        print(
-            "Best model saved!"
-        )
-
-
-# ============================================================
-# FINAL VALIDATION REPORT
-# ============================================================
-
-print("\n================================")
-print("FINAL VALIDATION REPORT")
-print("================================")
-
-
-print(
-    classification_report(
-        actual,
-        predictions,
-        target_names=[
-            "Safe",
-            "Mild",
-            "Explicit"
-        ],
-        zero_division=0
-    )
-)
-
-
-# ============================================================
-# INFERENCE FUNCTION
-# ============================================================
-
-def predict_lyrics(
-    lyrics,
-    model,
-    tokenizer
-):
-
-    model.eval()
-
-
-    # Preprocess
-    lyrics = clean_lyrics(
-        lyrics
-    )
-
-
-    # Tokenize
-    encoding = tokenizer(
-        lyrics,
-        padding="max_length",
-        truncation=True,
-        max_length=MAX_LENGTH,
-        return_tensors="pt"
-    )
-
-
-    input_ids = encoding[
-        "input_ids"
-    ].to(DEVICE)
-
-
-    attention_mask = encoding[
-        "attention_mask"
-    ].to(DEVICE)
-
-
-    # Prediction
-    with torch.no_grad():
-
-        logits = model(
-            input_ids,
-            attention_mask
-        )
-
-
-        probabilities = torch.softmax(
-            logits,
-            dim=1
-        )
-
-
-        predicted_class = torch.argmax(
-            probabilities,
-            dim=1
-        ).item()
-
-
-    label = ID2LABEL[
-        predicted_class
-    ]
-
-
-    confidence = probabilities[
-        0,
-        predicted_class
-    ].item()
-
-
-    return label, confidence
+        print("Best model saved!")
 
 
 # ============================================================
 # LOAD BEST MODEL
 # ============================================================
 
-if os.path.exists(
-    MODEL_SAVE_PATH
-):
+if os.path.exists(MODEL_SAVE_PATH):
 
     model.load_state_dict(
         torch.load(
@@ -878,6 +910,411 @@ if os.path.exists(
         "\nBest model loaded."
     )
 
+else:
+
+    raise FileNotFoundError(
+        "Best model was not saved."
+    )
+
+
+# ============================================================
+# FINAL VALIDATION REPORT
+# ============================================================
+
+(
+    best_val_loss,
+    best_val_accuracy,
+    final_val_actual,
+    final_val_predictions
+) = validate(
+    model,
+    val_loader,
+    criterion
+)
+
+
+print(
+    "\n================================"
+)
+
+print(
+    "FINAL VALIDATION REPORT"
+)
+
+print(
+    "================================"
+)
+
+print(
+    f"\nBest Validation Accuracy: "
+    f"{best_val_accuracy:.4f}"
+)
+
+print(
+    classification_report(
+        final_val_actual,
+        final_val_predictions,
+        target_names=[
+            "Safe",
+            "Mild",
+            "Explicit"
+        ],
+        zero_division=0
+    )
+)
+
+
+# ============================================================
+# FINAL TEST SET
+# ============================================================
+#
+# IMPORTANT:
+# The test set is used only here.
+#
+# ============================================================
+
+test_actual, test_predictions = evaluate_test_set(
+    model,
+    test_loader
+)
+
+
+# ============================================================
+# INFERENCE
+# ============================================================
+
+def predict_lyrics(
+    text,
+    model,
+    tokenizer
+):
+
+    model.eval()
+
+    text = clean_lyrics(text)
+
+    encoding = tokenizer(
+        text,
+        padding="max_length",
+        truncation=True,
+        max_length=MAX_LENGTH,
+        return_tensors="pt"
+    )
+
+    input_ids = encoding[
+        "input_ids"
+    ].to(DEVICE)
+
+    attention_mask = encoding[
+        "attention_mask"
+    ].to(DEVICE)
+
+
+    with torch.no_grad():
+
+        logits = model(
+            input_ids,
+            attention_mask
+        )
+
+        probabilities = torch.softmax(
+            logits,
+            dim=1
+        )
+
+
+    predicted_class = torch.argmax(
+        probabilities,
+        dim=1
+    ).item()
+
+    confidence = probabilities[
+        0,
+        predicted_class
+    ].item()
+
+
+    return (
+        ID2LABEL[predicted_class],
+        confidence
+    )
+
+
+# ============================================================
+# MODEL PREDICTION WRAPPER
+# ============================================================
+
+def model_predict_proba(texts):
+    """
+    Wrapper used by LIME and SHAP.
+
+    Returns:
+        [Safe probability,
+         Mild probability,
+         Explicit probability]
+    """
+
+    model.eval()
+
+    probabilities_list = []
+
+
+    for text in texts:
+
+        text = clean_lyrics(text)
+
+        encoding = tokenizer(
+            text,
+            padding="max_length",
+            truncation=True,
+            max_length=MAX_LENGTH,
+            return_tensors="pt"
+        )
+
+        input_ids = encoding[
+            "input_ids"
+        ].to(DEVICE)
+
+        attention_mask = encoding[
+            "attention_mask"
+        ].to(DEVICE)
+
+
+        with torch.no_grad():
+
+            logits = model(
+                input_ids,
+                attention_mask
+            )
+
+            probabilities = torch.softmax(
+                logits,
+                dim=1
+            )
+
+
+        probabilities_list.append(
+            probabilities
+            .cpu()
+            .numpy()[0]
+        )
+
+
+    return np.array(
+        probabilities_list
+    )
+
+
+# ============================================================
+# LIME EXPLANATION
+# ============================================================
+
+def explain_with_lime(text):
+
+    print(
+        "\n================================"
+    )
+
+    print(
+        "LIME EXPLANATION"
+    )
+
+    print(
+        "================================"
+    )
+
+
+    explainer = LimeTextExplainer(
+        class_names=[
+            "Safe",
+            "Mild",
+            "Explicit"
+        ]
+    )
+
+
+    explanation = explainer.explain_instance(
+        text,
+        model_predict_proba,
+        num_features=15,
+        num_samples=500
+    )
+
+
+    probabilities = model_predict_proba(
+        [text]
+    )[0]
+
+
+    predicted_class = np.argmax(
+        probabilities
+    )
+
+
+    print(
+        "\nPredicted class:",
+        ID2LABEL[predicted_class]
+    )
+
+
+    print(
+        "\nImportant words/phrases:"
+    )
+
+
+    for word, weight in explanation.as_list(
+        label=predicted_class
+    ):
+
+        direction = (
+            "supports"
+            if weight > 0
+            else "opposes"
+        )
+
+        print(
+            f"{word:30s} "
+            f"{weight:+.4f} "
+            f"({direction})"
+        )
+
+
+    return explanation
+
+
+# ============================================================
+# SHAP EXPLANATION
+# ============================================================
+
+def explain_with_shap(text):
+
+    print(
+        "\n================================"
+    )
+
+    print(
+        "SHAP EXPLANATION"
+    )
+
+    print(
+        "================================"
+    )
+
+
+    # --------------------------------------------------------
+    # CREATE TEXT MASKER
+    # --------------------------------------------------------
+
+    masker = shap.maskers.Text(
+        tokenizer=tokenizer
+    )
+
+
+    # --------------------------------------------------------
+    # CREATE SHAP EXPLAINER
+    # --------------------------------------------------------
+
+    explainer = shap.Explainer(
+        model_predict_proba,
+        masker
+    )
+
+
+    # --------------------------------------------------------
+    # GENERATE SHAP VALUES
+    # --------------------------------------------------------
+
+    shap_values = explainer(
+        [text]
+    )
+
+
+    # --------------------------------------------------------
+    # DETERMINE PREDICTED CLASS
+    # --------------------------------------------------------
+
+    probabilities = model_predict_proba(
+        [text]
+    )[0]
+
+
+    predicted_class = np.argmax(
+        probabilities
+    )
+
+
+    print(
+        "\nPredicted class:",
+        ID2LABEL[predicted_class]
+    )
+
+
+    print(
+        "\nSHAP feature contributions:"
+    )
+
+
+    # --------------------------------------------------------
+    # EXTRACT VALUES
+    # --------------------------------------------------------
+
+    values = shap_values.values[0]
+    tokens = shap_values.data[0]
+
+
+    # SHAP can return:
+    #
+    # [tokens]
+    #
+    # or:
+    #
+    # [tokens, classes]
+
+    if len(values.shape) > 1:
+
+        class_values = values[
+            :,
+            predicted_class
+        ]
+
+    else:
+
+        class_values = values
+
+
+    # --------------------------------------------------------
+    # RANK FEATURES
+    # --------------------------------------------------------
+
+    ranked_indices = np.argsort(
+        np.abs(class_values)
+    )[::-1]
+
+
+    # --------------------------------------------------------
+    # DISPLAY TOP FEATURES
+    # --------------------------------------------------------
+
+    for index in ranked_indices[:15]:
+
+        token = tokens[index]
+        value = class_values[index]
+
+        direction = (
+            "supports"
+            if value > 0
+            else "opposes"
+        )
+
+        print(
+            f"{str(token):30s} "
+            f"{value:+.4f} "
+            f"({direction})"
+        )
+
+
+    return shap_values
+
 
 # ============================================================
 # EXAMPLE INFERENCE
@@ -889,6 +1326,10 @@ you want the classifier to analyze.
 """
 
 
+# ============================================================
+# CLASSIFY LYRICS
+# ============================================================
+
 prediction, confidence = predict_lyrics(
     example_lyrics,
     model,
@@ -896,9 +1337,17 @@ prediction, confidence = predict_lyrics(
 )
 
 
-print("\n================================")
-print("INFERENCE")
-print("================================")
+print(
+    "\n================================"
+)
+
+print(
+    "INFERENCE"
+)
+
+print(
+    "================================"
+)
 
 print(
     "Prediction:",
@@ -908,4 +1357,22 @@ print(
 print(
     "Confidence:",
     f"{confidence * 100:.2f}%"
+)
+
+
+# ============================================================
+# LIME EXPLANATION
+# ============================================================
+
+lime_explanation = explain_with_lime(
+    example_lyrics
+)
+
+
+# ============================================================
+# SHAP EXPLANATION
+# ============================================================
+
+shap_explanation = explain_with_shap(
+    example_lyrics
 )
