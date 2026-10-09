@@ -4,3 +4,5 @@ scikit-learn
 pandas
 numpy
 tqdm
+datasets
+accelerate
