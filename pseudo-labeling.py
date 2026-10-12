@@ -38,8 +38,8 @@ TEST_FILE = DATA_DIR / "test_5k_annotated.csv"
 VALIDATION_FILE = DATA_DIR / "validation_5k_annotated.csv"
 UNLABELED_FILE = DATA_DIR / "training_set.csv"
 
-OUTPUT_DIR = DATA_DIR / "distilbert_song_classifier_v8"
-OUTPUT_FILE = DATA_DIR / "songs_pseudo_labeled_v8.csv"
+OUTPUT_DIR = DATA_DIR / "distilbert_song_classifier"
+OUTPUT_FILE = DATA_DIR / "train.csv"
 
 TEXT_COL = "lyrics"
 LABEL_COL = "safety_label"
