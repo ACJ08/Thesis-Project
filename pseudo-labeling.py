@@ -1,5 +1,6 @@
 
 from pathlib import Path
+import math
 
 import numpy as np
 import pandas as pd
@@ -18,6 +19,7 @@ from transformers import (
     AutoTokenizer,
     AutoModelForSequenceClassification,
     DataCollatorWithPadding,
+    EarlyStoppingCallback,
     Trainer,
     TrainingArguments,
     set_seed,
@@ -36,8 +38,8 @@ TEST_FILE = DATA_DIR / "test_5k_annotated.csv"
 VALIDATION_FILE = DATA_DIR / "validation_5k_annotated.csv"
 UNLABELED_FILE = DATA_DIR / "training_set.csv"
 
-OUTPUT_DIR = DATA_DIR / "distilbert_song_classifier"
-OUTPUT_FILE = DATA_DIR / "songs_pseudo_labeled.csv"
+OUTPUT_DIR = DATA_DIR / "distilbert_song_classifier_v8"
+OUTPUT_FILE = DATA_DIR / "songs_pseudo_labeled_v8.csv"
 
 TEXT_COL = "lyrics"
 LABEL_COL = "safety_label"
@@ -49,7 +51,9 @@ ID2LABEL = {i: label for label, i in LABEL2ID.items()}
 MAX_LENGTH = 512
 TRAIN_BATCH_SIZE = 8
 EVAL_BATCH_SIZE = 16
-EPOCHS = 3
+MAX_EPOCHS = 10
+EARLY_STOPPING_PATIENCE = 2
+MIN_MACRO_F1_IMPROVEMENT = 0.001
 LEARNING_RATE = 2e-5
 # Threshold is selected using validation predictions, not guessed in advance.
 THRESHOLD_CANDIDATES = [0.50, 0.60, 0.70, 0.80, 0.90, 0.95]
@@ -338,6 +342,11 @@ for seed in RANDOM_SEEDS:
     print(f"TRAINING RUN FOR SEED {seed}")
     print("=" * 68)
     set_seed(seed)
+    print(
+        f"Early stopping: monitor validation macro-F1; max epochs={MAX_EPOCHS}, "
+        f"patience={EARLY_STOPPING_PATIENCE}, "
+        f"minimum improvement={MIN_MACRO_F1_IMPROVEMENT:.3f}"
+    )
 
     model = AutoModelForSequenceClassification.from_pretrained(
         MODEL_NAME,
@@ -346,7 +355,7 @@ for seed in RANDOM_SEEDS:
         label2id=LABEL2ID,
     )
 
-    run_output_dir = DATA_DIR / f"distilbert_song_classifier_seed_{seed}"
+    run_output_dir = DATA_DIR / f"distilbert_song_classifier_v8_seed_{seed}"
     training_args = TrainingArguments(
         output_dir=run_output_dir,
         seed=seed,
@@ -356,9 +365,13 @@ for seed in RANDOM_SEEDS:
         learning_rate=LEARNING_RATE,
         per_device_train_batch_size=TRAIN_BATCH_SIZE,
         per_device_eval_batch_size=EVAL_BATCH_SIZE,
-        num_train_epochs=EPOCHS,
+        num_train_epochs=MAX_EPOCHS,
         weight_decay=0.01,
-        warmup_ratio=0.1,
+        # Approximate the former 10% warmup ratio using the maximum schedule.
+        warmup_steps=max(
+            1,
+            int(0.1 * math.ceil(len(train_dataset) / TRAIN_BATCH_SIZE) * MAX_EPOCHS),
+        ),
         load_best_model_at_end=True,
         metric_for_best_model="macro_f1",
         greater_is_better=True,
@@ -378,6 +391,12 @@ for seed in RANDOM_SEEDS:
         data_collator=data_collator,
         processing_class=tokenizer,
         compute_metrics=compute_metrics,
+        callbacks=[
+            EarlyStoppingCallback(
+                early_stopping_patience=EARLY_STOPPING_PATIENCE,
+                early_stopping_threshold=MIN_MACRO_F1_IMPROVEMENT,
+            )
+        ],
     )
     trainer.train()
 
@@ -467,8 +486,9 @@ results["predicted_label"] = [ID2LABEL[int(i)] for i in predicted_ids]
 results["confidence"] = confidence
 for i, label in ID2LABEL.items():
     results[f"prob_{label}"] = probabilities[:, i]
-results["needs_review"] = confidence < CONFIDENCE_THRESHOLD
-results[LABEL_COL] = results["predicted_label"].where(~results["needs_review"], pd.NA)
+# Keep every song labeled. Confidence controls review status, not label presence.
+results["needs_revision"] = (confidence < CONFIDENCE_THRESHOLD).astype(bool)
+results[LABEL_COL] = results["predicted_label"]
 
 val_median_confidence = float(np.median(best_run["val_confidence"]))
 pool_median_confidence = float(np.median(confidence)) if len(confidence) else float("nan")
@@ -486,11 +506,11 @@ print(f"Selected model seed: {best_run['seed']}")
 print(f"Confidence threshold used: {CONFIDENCE_THRESHOLD:.2f}")
 print("\nAll predicted class distribution:")
 print(results["predicted_label"].value_counts())
-print("\nAccepted pseudo-label distribution (safety_label):")
+print("\nFinal safety_label distribution (all songs retain predictions):")
 print(results[LABEL_COL].value_counts(dropna=False))
-print("\nSongs flagged for review:", int(results["needs_review"].sum()))
+print("\nSongs needing revision (needs_revision=True):", int(results["needs_revision"].sum()))
 print("Mean confidence:", round(float(confidence.mean()), 4))
 print("Unlabeled-pool confidence quantiles:", pd.Series(confidence).quantile([0, .25, .5, .75, .9, 1]).round(3).to_dict())
 print(f"Validation median confidence: {val_median_confidence:.3f}")
 print(f"Unlabeled-pool median confidence: {pool_median_confidence:.3f}")
-print("Rows with missing safety_label are below threshold and should not be used as accepted pseudo-labels.")
+print("All rows retain a predicted safety_label. Rows with needs_revision=True are provisional and should be reviewed before being treated as confirmed labels.")
