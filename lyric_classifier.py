@@ -29,11 +29,10 @@ from lime.lime_text import LimeTextExplainer
 
 import shap
 
-# Dataset files are expected in the project's parent data directory by default.
-# Resolution also checks common alternate locations to avoid dependence on the
-# terminal's current working directory.
+# Resolve input and output paths relative to this script, not the terminal's
+# current working directory. Supports scripts at either the repository root or
+# in a src/ subdirectory.
 PROJECT_DIR = Path(__file__).resolve().parent
-DATA_DIR = PROJECT_DIR.parent / "data"
 
 TRAIN_CSV_FILE = "Training.csv"
 VAL_CSV_FILE = "Validation.csv"
@@ -43,10 +42,10 @@ TEST_CSV_FILE = "Testing.csv"
 def resolve_dataset_path(filename):
     """Find a dataset file in the configured data directory or common locations."""
     candidates = [
-        DATA_DIR / filename,
-        PROJECT_DIR.parent / filename,
         PROJECT_DIR / "data" / filename,
+        PROJECT_DIR.parent / "data" / filename,
         PROJECT_DIR / filename,
+        PROJECT_DIR.parent / filename,
     ]
     for candidate in candidates:
         if candidate.is_file():
@@ -55,7 +54,7 @@ def resolve_dataset_path(filename):
     searched = "\n".join(f"  - {path}" for path in candidates)
     raise FileNotFoundError(
         f"Could not find {filename}. Checked these locations:\n{searched}\n"
-        "Update DATA_DIR near the top of the script to match your dataset folder."
+        "Place the CSV in one of the listed locations or update resolve_dataset_path()."
     )
 
 EXCLUDE_NEEDS_REVISION = True
@@ -78,7 +77,7 @@ MAX_GRAD_NORM = 1.0
 
 RANDOM_SEED = 67
 
-MODEL_SAVE_PATH = "saved_model/lyric_classifier_v14.pt"
+MODEL_SAVE_PATH = PROJECT_DIR / "saved_model" / "lyric_classifier_v15.pt"
 
 # Safe module-level configuration: selecting a device does not start training.
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -1174,10 +1173,7 @@ def main():
 
             best_val_accuracy = val_accuracy
 
-            os.makedirs(
-                "saved_model",
-                exist_ok=True
-            )
+            MODEL_SAVE_PATH.parent.mkdir(parents=True, exist_ok=True)
 
             torch.save(
                 model.state_dict(),
@@ -1186,7 +1182,7 @@ def main():
 
             print("Best model saved!")
 
-    if os.path.exists(MODEL_SAVE_PATH):
+    if MODEL_SAVE_PATH.is_file():
 
         model.load_state_dict(
             torch.load(
