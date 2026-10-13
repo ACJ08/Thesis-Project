@@ -77,13 +77,14 @@ MAX_GRAD_NORM = 1.0
 
 RANDOM_SEED = 67
 
-MODEL_SAVE_PATH = PROJECT_DIR / "saved_model" / "lyric_classifier_v17.pt"
+MODEL_SAVE_PATH = PROJECT_DIR / "saved_model" / "lyric_classifier_v20.pt"
 # Reuse an existing trained checkpoint by default. If v17 does not exist,
 # the script will try the previous v16 and v15 checkpoints before training.
 REUSE_EXISTING_MODEL = True
 FORCE_RETRAIN = False
 EXISTING_MODEL_PATHS = [
     MODEL_SAVE_PATH,
+    PROJECT_DIR / "saved_model" / "lyric_classifier_v17.pt",
     PROJECT_DIR / "saved_model" / "lyric_classifier_v16.pt",
     PROJECT_DIR / "saved_model" / "lyric_classifier_v15.pt",
 ]
@@ -745,6 +746,24 @@ def make_model_predict_proba(model, tokenizer):
         return model_predict_proba(texts, model, tokenizer)
     return predict_proba
 
+def prepare_explanation_text(text, tokenizer):
+    """Limit explainer input to the same token budget the classifier can process."""
+    text = clean_lyrics(text)
+    # Reserve room for RoBERTa's special tokens ([CLS]/[SEP]-equivalents).
+    token_ids = tokenizer.encode(
+        text,
+        add_special_tokens=False,
+        truncation=True,
+        max_length=MAX_LENGTH - tokenizer.num_special_tokens_to_add(pair=False),
+    )
+    return tokenizer.decode(token_ids, skip_special_tokens=True).strip()
+
+
+def is_punctuation_only(token):
+    """True for explanation features containing no letters or digits."""
+    return not any(character.isalnum() for character in str(token))
+
+
 def explain_with_lime(text, model, tokenizer):
 
     print(
@@ -760,6 +779,8 @@ def explain_with_lime(text, model, tokenizer):
     )
 
 
+    text = prepare_explanation_text(text, tokenizer)
+    print(f"Explaining {len(tokenizer.encode(text, add_special_tokens=True))} RoBERTa tokens (maximum {MAX_LENGTH}).")
     predict_proba = make_model_predict_proba(model, tokenizer)
     explainer = LimeTextExplainer(
         class_names=[
@@ -783,12 +804,12 @@ def explain_with_lime(text, model, tokenizer):
     )
 
     print(
-        "\\nPredicted class:",
+        "\nPredicted class:",
         ID2LABEL[predicted_class]
     )
 
     print(
-        "\\nImportant words/phrases:"
+        "\nImportant words/phrases:"
     )
 
     # Defensive check: do not let a missing LIME class explanation crash the run.
@@ -822,13 +843,16 @@ def explain_with_shap(text, model, tokenizer):
 
 
     # --------------------------------------------------------
-    # CREATE TEXT MASKER
+    # PREPARE A MODEL-LENGTH INPUT AND WORD-LEVEL MASKER
     # --------------------------------------------------------
 
+    text = prepare_explanation_text(text, tokenizer)
+    print(f"Explaining {len(tokenizer.encode(text, add_special_tokens=True))} RoBERTa tokens (maximum {MAX_LENGTH}).")
     predict_proba = make_model_predict_proba(model, tokenizer)
-    masker = shap.maskers.Text(
-        tokenizer=tokenizer
-    )
+
+    # Explain whitespace-delimited text features rather than exposing every
+    # RoBERTa subword fragment and punctuation mark as a separate feature.
+    masker = shap.maskers.Text(r"\W+", collapse_mask_token=True)
 
 
     # --------------------------------------------------------
@@ -857,9 +881,9 @@ def explain_with_shap(text, model, tokenizer):
     probabilities = predict_proba([text])[0]
 
 
-    predicted_class = np.argmax(
+    predicted_class = int(np.argmax(
         probabilities
-    )
+    ))
 
 
     print(
@@ -914,22 +938,24 @@ def explain_with_shap(text, model, tokenizer):
     # DISPLAY TOP FEATURES
     # --------------------------------------------------------
 
-    for index in ranked_indices[:15]:
+    displayed = 0
+    for index in ranked_indices:
+        token = str(tokens[index]).strip()
+        value = float(class_values[index])
 
-        token = tokens[index]
-        value = class_values[index]
+        # Punctuation-only features are not useful in this human-readable
+        # summary. Their influence is not changed in the underlying SHAP values.
+        if not token or is_punctuation_only(token):
+            continue
 
-        direction = (
-            "supports"
-            if value > 0
-            else "opposes"
-        )
+        direction = "supports" if value > 0 else "opposes"
+        print(f"{token:30s} {value:+.4f} ({direction})")
+        displayed += 1
+        if displayed >= 15:
+            break
 
-        print(
-            f"{str(token):30s} "
-            f"{value:+.4f} "
-            f"({direction})"
-        )
+    if displayed == 0:
+        print("No readable word-level features were returned for this explanation.")
 
 
     return shap_values
@@ -1198,7 +1224,7 @@ def main():
 
     print(
         f"\nBest/Loaded Validation Accuracy: "
-        f"{final_val_accuracy:.4f}"
+        f"{best_val_accuracy:.4f}"
     )
 
     print(
@@ -1219,7 +1245,28 @@ def main():
         test_loader
     )
 
-    example_lyrics = "Replace this text with the lyrics you want the classifier to analyze."
+    # Randomly select a labeled song from the validation set for the demo.
+    # Use validation rather than test so the test set remains reserved for evaluation.
+    if val_df.empty:
+        print("Validation dataset has no usable labeled lyrics; skipping inference, LIME, and SHAP.")
+        return
+
+    selected_index = random.SystemRandom().choice(list(val_df.index))
+    selected_song = val_df.loc[selected_index]
+    example_lyrics = clean_lyrics(selected_song["text"])
+    actual_label = str(selected_song["explicitness"])
+    song_name = str(selected_song.get("song_name", "Unknown song"))
+    artist_name = str(selected_song.get("artist", "Unknown artist"))
+
+    if not example_lyrics:
+        print("Randomly selected song has no usable lyrics; skipping inference, LIME, and SHAP.")
+        return
+
+    print("\nRandomly selected labeled song from Validation.csv")
+    print(f"Song: {song_name}")
+    print(f"Artist: {artist_name}")
+    print(f"Actual label: {actual_label}")
+    print(f"Lyrics preview: {example_lyrics[:300]}{'...' if len(example_lyrics) > 300 else ''}")
 
     prediction, confidence = predict_lyrics(
         example_lyrics,
