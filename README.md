@@ -71,9 +71,9 @@ The BiLSTM representation is passed through fully connected layers to produce pr
 The project uses three separate CSV files:
 
 ```text
-train.csv
-validation.csv
-test.csv
+Train.csv
+Validation.csv
+Test.csv
 ```
 
 The intended dataset distribution is:
