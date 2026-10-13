@@ -30,16 +30,16 @@ from transformers import (
 # ============================================================
 
 # Resolve all input/output paths relative to this script's folder.
-DATA_DIR = Path(__file__).resolve().parent
+DATA_DIR = Path(__file__).resolve().parent / "data"
 
 MODEL_NAME = "distilbert-base-uncased"
 
-TEST_FILE = DATA_DIR / "test_5k_annotated.csv"
-VALIDATION_FILE = DATA_DIR / "validation_5k_annotated.csv"
-UNLABELED_FILE = DATA_DIR / "training_set.csv"
+TEST_FILE = DATA_DIR / "Testing.csv"
+VALIDATION_FILE = DATA_DIR / "Validation.csv"
+UNLABELED_FILE = DATA_DIR / "Unprocessed Other Songs.csv"
 
 OUTPUT_DIR = DATA_DIR / "distilbert_song_classifier"
-OUTPUT_FILE = DATA_DIR / "train.csv"
+OUTPUT_FILE = DATA_DIR / "Training.csv"
 
 TEXT_COL = "lyrics"
 LABEL_COL = "safety_label"
