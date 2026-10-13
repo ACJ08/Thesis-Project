@@ -183,7 +183,33 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### 4. Place the datasets
+### 4. Hugging Face authentication (optional)
+
+The classifier downloads the pretrained `roberta-base` model from Hugging Face when it runs for the first time. Because this is a public model, authentication is generally optional. Logging in can help avoid some unauthenticated download limits.
+
+Install or update the Hugging Face CLI through the same Python environment used to run the project:
+
+```bash
+python -m pip install -U huggingface_hub
+```
+
+Then log in:
+
+```bash
+hf auth login
+```
+
+Paste your own **Hugging Face read token** when prompted. You can create one in your Hugging Face account settings under **Access Tokens**. Do not put the token in this repository, in `requirements.txt`, or directly in the source code. The CLI stores it in your local user environment, and the Hugging Face libraries can use it automatically.
+
+To verify the login:
+
+```bash
+hf auth whoami
+```
+
+If the `hf` command is not recognized, run it through the Scripts directory of the Python environment where `huggingface_hub` was installed, or activate that environment first. Authentication is optional for downloading public models.
+
+### 5. Place the datasets
 
 Make sure the following files are available in the project directory:
 

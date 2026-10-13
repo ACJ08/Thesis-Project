@@ -8,3 +8,7 @@ datasets
 accelerate
 lime
 shap
+transformers
+tokenizers
+huggingface-hub>=1.5.0,<2.0
+pyarrow>=7.0,<26,!=25.0.0
