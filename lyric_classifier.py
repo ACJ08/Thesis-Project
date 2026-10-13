@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 
 import re
 
@@ -28,11 +29,34 @@ from lime.lime_text import LimeTextExplainer
 
 import shap
 
+# Dataset files are expected in the project's parent data directory by default.
+# Resolution also checks common alternate locations to avoid dependence on the
+# terminal's current working directory.
+PROJECT_DIR = Path(__file__).resolve().parent
+DATA_DIR = PROJECT_DIR.parent / "data"
+
 TRAIN_CSV_FILE = "Training.csv"
-
 VAL_CSV_FILE = "Validation.csv"
-
 TEST_CSV_FILE = "Testing.csv"
+
+
+def resolve_dataset_path(filename):
+    """Find a dataset file in the configured data directory or common locations."""
+    candidates = [
+        DATA_DIR / filename,
+        PROJECT_DIR.parent / filename,
+        PROJECT_DIR / "data" / filename,
+        PROJECT_DIR / filename,
+    ]
+    for candidate in candidates:
+        if candidate.is_file():
+            return candidate
+
+    searched = "\n".join(f"  - {path}" for path in candidates)
+    raise FileNotFoundError(
+        f"Could not find {filename}. Checked these locations:\n{searched}\n"
+        "Update DATA_DIR near the top of the script to match your dataset folder."
+    )
 
 EXCLUDE_NEEDS_REVISION = True
 
@@ -54,7 +78,7 @@ MAX_GRAD_NORM = 1.0
 
 RANDOM_SEED = 67
 
-MODEL_SAVE_PATH = "saved_model/lyric_classifier_v13.pt"
+MODEL_SAVE_PATH = "saved_model/lyric_classifier_v14.pt"
 
 # Safe module-level configuration: selecting a device does not start training.
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -921,11 +945,17 @@ def main():
 
     print("\nLoading datasets...")
 
-    train_df = pd.read_csv(TRAIN_CSV_FILE)
+    train_path = resolve_dataset_path(TRAIN_CSV_FILE)
+    val_path = resolve_dataset_path(VAL_CSV_FILE)
+    test_path = resolve_dataset_path(TEST_CSV_FILE)
 
-    val_df = pd.read_csv(VAL_CSV_FILE)
+    print(f"Training data:   {train_path}")
+    print(f"Validation data: {val_path}")
+    print(f"Testing data:    {test_path}")
 
-    test_df = pd.read_csv(TEST_CSV_FILE)
+    train_df = pd.read_csv(train_path)
+    val_df = pd.read_csv(val_path)
+    test_df = pd.read_csv(test_path)
 
     train_df = normalize_dataset_columns(train_df, "Training dataset")
 
