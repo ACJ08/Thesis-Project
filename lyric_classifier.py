@@ -77,7 +77,16 @@ MAX_GRAD_NORM = 1.0
 
 RANDOM_SEED = 67
 
-MODEL_SAVE_PATH = PROJECT_DIR / "saved_model" / "lyric_classifier_v15.pt"
+MODEL_SAVE_PATH = PROJECT_DIR / "saved_model" / "lyric_classifier_v17.pt"
+# Reuse an existing trained checkpoint by default. If v17 does not exist,
+# the script will try the previous v16 and v15 checkpoints before training.
+REUSE_EXISTING_MODEL = True
+FORCE_RETRAIN = False
+EXISTING_MODEL_PATHS = [
+    MODEL_SAVE_PATH,
+    PROJECT_DIR / "saved_model" / "lyric_classifier_v16.pt",
+    PROJECT_DIR / "saved_model" / "lyric_classifier_v15.pt",
+]
 
 # Safe module-level configuration: selecting a device does not start training.
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -761,49 +770,39 @@ def explain_with_lime(text, model, tokenizer):
     )
 
 
+    probabilities = predict_proba([text])[0]
+    predicted_class = int(np.argmax(probabilities))
+
+    # Explicitly request the predicted class so LIME generates its explanation.
     explanation = explainer.explain_instance(
         text,
         predict_proba,
+        labels=(predicted_class,),
         num_features=15,
         num_samples=1000
     )
 
-
-    probabilities = predict_proba([text])[0]
-
-
-    predicted_class = np.argmax(
-        probabilities
-    )
-
-
     print(
-        "\nPredicted class:",
+        "\\nPredicted class:",
         ID2LABEL[predicted_class]
     )
 
-
     print(
-        "\nImportant words/phrases:"
+        "\\nImportant words/phrases:"
     )
 
-
-    for word, weight in explanation.as_list(
-        label=predicted_class
-    ):
-
-        direction = (
-            "supports"
-            if weight > 0
-            else "opposes"
-        )
-
+    # Defensive check: do not let a missing LIME class explanation crash the run.
+    if predicted_class not in explanation.local_exp:
         print(
-            f"{word:30s} "
-            f"{weight:+.4f} "
-            f"({direction})"
+            f"LIME did not generate an explanation for "
+            f"class {ID2LABEL[predicted_class]}."
         )
+        print("Available explanation labels:", list(explanation.local_exp))
+        return explanation
 
+    for word, weight in explanation.as_list(label=predicted_class):
+        direction = "supports" if weight > 0 else "opposes"
+        print(f"{word:30s} {weight:+.4f} ({direction})")
 
     return explanation
 
@@ -1085,124 +1084,94 @@ def main():
 
     criterion = nn.CrossEntropyLoss(weight=class_weights_tensor)
 
-    optimizer = AdamW(
-        model.parameters(),
-        lr=LEARNING_RATE
-    )
-
-    optimizer_steps_per_epoch = (len(train_loader) + GRADIENT_ACCUMULATION_STEPS - 1) // GRADIENT_ACCUMULATION_STEPS
-
-    total_optimizer_steps = max(1, optimizer_steps_per_epoch * EPOCHS)
-
-    warmup_steps = int(total_optimizer_steps * WARMUP_RATIO)
-
-    scheduler = get_linear_schedule_with_warmup(
-        optimizer,
-        num_warmup_steps=warmup_steps,
-        num_training_steps=total_optimizer_steps,
-    )
-
-    print(f"Scheduler: {warmup_steps} warmup steps / {total_optimizer_steps} total optimizer steps; gradient accumulation={GRADIENT_ACCUMULATION_STEPS}.")
-
-    print(
-        "\nStarting training...\n"
-    )
-
-    best_val_accuracy = float("-inf")
-
-    for epoch in range(EPOCHS):
-
-        print(
-            f"\n========== "
-            f"Epoch {epoch + 1}/{EPOCHS}"
-            f" =========="
+    # Check for a previously trained model BEFORE starting the training loop.
+    # v15 and v16 use the same model architecture, so their state dictionaries
+    # can be loaded into this version without retraining.
+    checkpoint_to_load = None
+    if REUSE_EXISTING_MODEL and not FORCE_RETRAIN:
+        checkpoint_to_load = next(
+            (path for path in EXISTING_MODEL_PATHS if path.is_file()),
+            None,
         )
 
+    if checkpoint_to_load is not None:
+        print(f"\nReusing saved model: {checkpoint_to_load}")
+        model.load_state_dict(
+            torch.load(
+                checkpoint_to_load,
+                map_location=DEVICE,
+                weights_only=True,
+            )
+        )
+        model.eval()
+        print("Saved model loaded. Skipping training.")
+    else:
+        if FORCE_RETRAIN:
+            print("\nFORCE_RETRAIN=True: training a fresh model.")
+        else:
+            print("\nNo compatible saved checkpoint found. Training a new model.")
 
-        # --------------------------------------------------------
-        # TRAIN
-        # --------------------------------------------------------
+        optimizer = AdamW(
+            model.parameters(),
+            lr=LEARNING_RATE
+        )
 
-        train_loss, train_accuracy = train_one_epoch(
-            model,
-            train_loader,
+        optimizer_steps_per_epoch = (
+            len(train_loader) + GRADIENT_ACCUMULATION_STEPS - 1
+        ) // GRADIENT_ACCUMULATION_STEPS
+        total_optimizer_steps = max(1, optimizer_steps_per_epoch * EPOCHS)
+        warmup_steps = int(total_optimizer_steps * WARMUP_RATIO)
+
+        scheduler = get_linear_schedule_with_warmup(
             optimizer,
-            criterion,
-            scheduler
-        )
-
-
-        # --------------------------------------------------------
-        # VALIDATE
-        # --------------------------------------------------------
-
-        (
-            val_loss,
-            val_accuracy,
-            val_actual,
-            val_predictions
-        ) = validate(
-            model,
-            val_loader,
-            criterion
-        )
-
-
-        print(
-            f"\nTrain Loss: {train_loss:.4f}"
+            num_warmup_steps=warmup_steps,
+            num_training_steps=total_optimizer_steps,
         )
 
         print(
-            f"Train Accuracy: {train_accuracy:.4f}"
+            f"Scheduler: {warmup_steps} warmup steps / "
+            f"{total_optimizer_steps} total optimizer steps; "
+            f"gradient accumulation={GRADIENT_ACCUMULATION_STEPS}."
         )
+        print("\nStarting training...\n")
 
-        print(
-            f"Validation Loss: {val_loss:.4f}"
-        )
+        best_val_accuracy = float("-inf")
 
-        print(
-            f"Validation Accuracy: {val_accuracy:.4f}"
-        )
+        for epoch in range(EPOCHS):
+            print(f"\n========== Epoch {epoch + 1}/{EPOCHS} ==========")
 
-
-        # --------------------------------------------------------
-        # SAVE BEST MODEL
-        # --------------------------------------------------------
-
-        if val_accuracy > best_val_accuracy:
-
-            best_val_accuracy = val_accuracy
-
-            MODEL_SAVE_PATH.parent.mkdir(parents=True, exist_ok=True)
-
-            torch.save(
-                model.state_dict(),
-                MODEL_SAVE_PATH
+            train_loss, train_accuracy = train_one_epoch(
+                model, train_loader, optimizer, criterion, scheduler
+            )
+            val_loss, val_accuracy, val_actual, val_predictions = validate(
+                model, val_loader, criterion
             )
 
-            print("Best model saved!")
+            print(f"\nTrain Loss: {train_loss:.4f}")
+            print(f"Train Accuracy: {train_accuracy:.4f}")
+            print(f"Validation Loss: {val_loss:.4f}")
+            print(f"Validation Accuracy: {val_accuracy:.4f}")
 
-    if MODEL_SAVE_PATH.is_file():
+            if val_accuracy > best_val_accuracy:
+                best_val_accuracy = val_accuracy
+                MODEL_SAVE_PATH.parent.mkdir(parents=True, exist_ok=True)
+                torch.save(model.state_dict(), MODEL_SAVE_PATH)
+                print(f"Best model saved to {MODEL_SAVE_PATH}!")
+
+        if not MODEL_SAVE_PATH.is_file():
+            raise FileNotFoundError(
+                f"Training finished but checkpoint was not saved: {MODEL_SAVE_PATH}"
+            )
 
         model.load_state_dict(
             torch.load(
                 MODEL_SAVE_PATH,
                 map_location=DEVICE,
-                weights_only=True
+                weights_only=True,
             )
         )
-
         model.eval()
-
-        print(
-            "\nBest model loaded."
-        )
-
-    else:
-
-        raise FileNotFoundError(
-            "Best model was not saved."
-        )
+        print("\nBest model loaded.")
 
     (
         best_val_loss,
@@ -1228,8 +1197,8 @@ def main():
     )
 
     print(
-        f"\nBest Validation Accuracy: "
-        f"{best_val_accuracy:.4f}"
+        f"\nBest/Loaded Validation Accuracy: "
+        f"{final_val_accuracy:.4f}"
     )
 
     print(
