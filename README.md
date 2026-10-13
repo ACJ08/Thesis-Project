@@ -14,7 +14,7 @@ The system uses a hybrid **RoBERTa → CNN → LSTM** architecture for lyric cla
 
 * RoBERTa-based contextual text representation
 * CNN layers for extracting local textual patterns
-* Bidirectional LSTM for sequential context
+* Unidirectional LSTM for sequential context
 * Three-class lyric explicitness classification
 * Separate training, validation, and test datasets
 * Best-model selection based on validation accuracy
@@ -284,7 +284,7 @@ Dropout:            0.3
 Random seed:        67
 ```
 
-The model uses a bidirectional LSTM, meaning the LSTM processes the sequence in both forward and backward directions.
+The model uses a unidirectional LSTM, meaning the LSTM processes the sequence in both forward and backward directions.
 
 ---
 
