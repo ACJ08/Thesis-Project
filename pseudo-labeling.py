@@ -31,26 +31,15 @@ from transformers import (
 
 # Resolve all input/output paths relative to this script's folder.
 DATA_DIR = Path(__file__).resolve().parent / "data"
-DATA_DIR.mkdir(parents=True, exist_ok=True)
 
 MODEL_NAME = "distilbert-base-uncased"
 
-# The two existing 5k annotated files are combined into one 10k pool,
-# then re-split into stratified 80% train / 10% validation / 10% test.
-TEST_SOURCE_FILE = DATA_DIR / "Testing.csv"
-VALIDATION_SOURCE_FILE = DATA_DIR / "Validation].csv"
-SPOTIFY_FILE = DATA_DIR / "spotify_dataset.csv"
-# If the CSV is still in the KaggleHub cache, the script will use this known
-# location as a fallback when the ./data copy does not exist.
-SPOTIFY_CACHE_FILE = Path(
-    r"C:\Users\Sephie\.cache\kagglehub\datasets\devdope\900k-spotify\versions\3\spotify_dataset.csv"
-)
+TEST_FILE = DATA_DIR / "Testing.csv"
+VALIDATION_FILE = DATA_DIR / "Validation.csv"
+UNLABELED_FILE = DATA_DIR / "train_40k.csv"
 
 OUTPUT_DIR = DATA_DIR / "distilbert_song_classifier"
-OUTPUT_ALL_PSEUDO_LABELS = DATA_DIR / "spotify_pseudo_labeled_all.csv"
-OUTPUT_BALANCED_40K = DATA_DIR / "Training.csv"
-PREDICTION_CHUNK_SIZE = 10000
-TARGET_PER_CLASS = 13333  # One class gets one extra row for exactly 40,000.
+OUTPUT_FILE = DATA_DIR / "Training.csv"
 
 TEXT_COL = "lyrics"
 LABEL_COL = "safety_label"
@@ -84,72 +73,58 @@ set_seed(RANDOM_SEED)
 
 
 # ============================================================
-# LOAD THE 10K ANNOTATED POOL, CREATE A STRATIFIED 80/10/10 SPLIT,
-# AND LOAD THE ORIGINAL SPOTIFY DATASET
+# LOAD, STANDARDIZE, AND SPLIT ANNOTATED DATA
 # ============================================================
 
-# As agreed, the two 5k files are not kept in their former test/validation
-# roles. They are combined into one labeled pool, deduplicated, then split
-# 80/10/10 with stratification. The new test split remains held out from
-# training and model selection.
+# We are repurposing the two existing 5k annotated files as one
+# 10k labeled pool. Their old Test/Validation roles no longer apply.
+# A new stratified 80/10/10 split is created below.
+
 def load_annotated_file(path):
-    if not path.exists():
-        raise FileNotFoundError(
-            f"Required annotated file not found: {path}\n"
-            "Place test_5k_annotated.csv and validation_5k_annotated.csv "
-            "in the data folder. These two files will be merged and split "
-            "into 80% training, 10% validation, and 10% test."
-        )
     df = pd.read_csv(path)
     df.columns = df.columns.str.strip()
+
     required = {"song_title", "artist", "lyrics", "safety_label"}
     missing = required - set(df.columns)
     if missing:
         raise ValueError(f"{path.name} is missing columns: {sorted(missing)}")
-    keep = ["song_title", "artist", "lyrics", "safety_label"]
-    if "justification" in df.columns:
-        keep.append("justification")
-    df = df[keep].copy()
+
+    df = df[["song_title", "artist", "lyrics", "safety_label"]].copy()
     df = df.dropna(subset=["song_title", "artist", "lyrics", "safety_label"])
-    for col in ["song_title", "artist", "lyrics"]:
-        df[col] = df[col].astype(str).str.strip()
+    df["song_title"] = df["song_title"].astype(str).str.strip()
+    df["artist"] = df["artist"].astype(str).str.strip()
+    df[TEXT_COL] = df[TEXT_COL].astype(str).str.strip()
     df[LABEL_COL] = df[LABEL_COL].astype(str).str.strip().str.casefold()
     df = df[(df["song_title"] != "") & (df["artist"] != "") & (df[TEXT_COL] != "")]
+
     invalid = set(df[LABEL_COL].unique()) - set(LABELS)
     if invalid:
         raise ValueError(f"Invalid labels in {path.name}: {sorted(invalid)}")
     return df.reset_index(drop=True)
 
 
-def add_match_keys(df):
-    df = df.copy()
-    df["_title_key"] = df["song_title"].astype(str).str.casefold().str.strip()
-    df["_artist_key"] = df["artist"].astype(str).str.casefold().str.strip()
-    return df
+test_annotated_df = load_annotated_file(TEST_FILE)
+validation_annotated_df = load_annotated_file(VALIDATION_FILE)
 
+all_labeled_df = pd.concat(
+    [test_annotated_df, validation_annotated_df], ignore_index=True
+)
 
-test_source_df = load_annotated_file(TEST_SOURCE_FILE)
-validation_source_df = load_annotated_file(VALIDATION_SOURCE_FILE)
-annotated_pool = pd.concat([test_source_df, validation_source_df], ignore_index=True)
-annotated_pool = add_match_keys(annotated_pool)
-rows_before_dedup = len(annotated_pool)
-annotated_pool = annotated_pool.drop_duplicates(
+# Remove exact duplicate title/artist pairs across the combined labeled pool.
+all_labeled_df["_title_key"] = all_labeled_df["song_title"].str.casefold().str.strip()
+all_labeled_df["_artist_key"] = all_labeled_df["artist"].str.casefold().str.strip()
+before_dedup = len(all_labeled_df)
+all_labeled_df = all_labeled_df.drop_duplicates(
     subset=["_title_key", "_artist_key"], keep="first"
 ).drop(columns=["_title_key", "_artist_key"]).reset_index(drop=True)
-print(
-    f"Combined annotated pool: {rows_before_dedup:,} rows; "
-    f"{len(annotated_pool):,} after title/artist deduplication."
-)
-print("Combined annotated label distribution:")
-print(annotated_pool[LABEL_COL].value_counts())
+print(f"Combined annotated rows: {before_dedup:,}; after duplicate removal: {len(all_labeled_df):,}")
 
-# First reserve 20% as a holdout, then split that equally into validation/test.
-# This yields approximately 80/10/10 while preserving each class's proportions.
+# First reserve 10% for test, then split the remaining 90% into 8:1 train/validation.
 train_df, holdout_df = train_test_split(
-    annotated_pool,
+    all_labeled_df,
     test_size=0.20,
     random_state=RANDOM_SEED,
-    stratify=annotated_pool[LABEL_COL],
+    stratify=all_labeled_df[LABEL_COL],
 )
 val_df, final_test_df = train_test_split(
     holdout_df,
@@ -157,78 +132,44 @@ val_df, final_test_df = train_test_split(
     random_state=RANDOM_SEED,
     stratify=holdout_df[LABEL_COL],
 )
-train_df = train_df.reset_index(drop=True)
-val_df = val_df.reset_index(drop=True)
-final_test_df = final_test_df.reset_index(drop=True)
 
-# Save the exact split used for reproducibility/auditing.
-train_df.to_csv(DATA_DIR / "annotated_train_80.csv", index=False)
-val_df.to_csv(DATA_DIR / "annotated_validation_10.csv", index=False)
-final_test_df.to_csv(DATA_DIR / "annotated_test_10.csv", index=False)
-print(f"\nTraining split (80%): {len(train_df):,}")
-print(f"Validation split (10%): {len(val_df):,}")
-print(f"Held-out test split (10%): {len(final_test_df):,}")
-for name, split_df in [("Training", train_df), ("Validation", val_df), ("Held-out test", final_test_df)]:
-    missing_classes = set(LABELS) - set(split_df[LABEL_COL].unique())
-    if missing_classes:
-        raise ValueError(f"{name} split is missing classes: {sorted(missing_classes)}")
+# Load the candidate pool produced by processing.py.
+unlabeled_df = pd.read_csv(UNLABELED_FILE)
+unlabeled_df.columns = unlabeled_df.columns.str.strip()
 
-# Load the actual source corpus; no 50k random sample is taken.
-if not SPOTIFY_FILE.exists() and SPOTIFY_CACHE_FILE.exists():
-    SPOTIFY_FILE = SPOTIFY_CACHE_FILE
-if not SPOTIFY_FILE.exists():
-    raise FileNotFoundError(
-        f"Original Spotify dataset not found at {DATA_DIR / 'spotify_dataset.csv'} "
-        f"or the configured KaggleHub cache path {SPOTIFY_CACHE_FILE}."
-    )
-spotify_df = pd.read_csv(SPOTIFY_FILE, low_memory=False)
-spotify_df.columns = spotify_df.columns.str.strip()
-rename_map = {}
-if "song" in spotify_df.columns and "song_title" not in spotify_df.columns:
-    rename_map["song"] = "song_title"
-if "Artist(s)" in spotify_df.columns and "artist" not in spotify_df.columns:
-    rename_map["Artist(s)"] = "artist"
-if "text" in spotify_df.columns and "lyrics" not in spotify_df.columns:
-    rename_map["text"] = "lyrics"
-spotify_df = spotify_df.rename(columns=rename_map)
-required_spotify = {"song_title", "artist", "lyrics"}
-missing_spotify = required_spotify - set(spotify_df.columns)
-if missing_spotify:
-    raise ValueError(
-        f"{SPOTIFY_FILE.name} is missing required columns after schema mapping: "
-        f"{sorted(missing_spotify)}. Available columns: {spotify_df.columns.tolist()}"
-    )
-spotify_df = spotify_df.dropna(subset=["song_title", "artist", "lyrics"]).copy()
+# Accept the processed schema, and also the original raw songs schema.
+if "lyrics" not in unlabeled_df.columns and "text" in unlabeled_df.columns:
+    unlabeled_df = unlabeled_df.rename(columns={"text": "lyrics"})
+if "song_title" not in unlabeled_df.columns and "song" in unlabeled_df.columns:
+    unlabeled_df = unlabeled_df.rename(columns={"song": "song_title"})
+if "artist" not in unlabeled_df.columns and "Artist(s)" in unlabeled_df.columns:
+    unlabeled_df = unlabeled_df.rename(columns={"Artist(s)": "artist"})
+
+required_unlabeled = {"song_title", "artist", "lyrics"}
+missing_unlabeled = required_unlabeled - set(unlabeled_df.columns)
+if missing_unlabeled:
+    raise ValueError(f"{UNLABELED_FILE.name} is missing columns: {sorted(missing_unlabeled)}")
+
+unlabeled_df = unlabeled_df.dropna(subset=["song_title", "artist", "lyrics"]).copy()
 for col in ["song_title", "artist", "lyrics"]:
-    spotify_df[col] = spotify_df[col].astype(str).str.strip()
-spotify_df = spotify_df[
-    (spotify_df["song_title"] != "") & (spotify_df["artist"] != "") & (spotify_df["lyrics"] != "")
+    unlabeled_df[col] = unlabeled_df[col].astype(str).str.strip()
+unlabeled_df = unlabeled_df[
+    (unlabeled_df["song_title"] != "")
+    & (unlabeled_df["artist"] != "")
+    & (unlabeled_df["lyrics"] != "")
 ].reset_index(drop=True)
-
-# Exclude overlap with ALL labeled splits before inference, and deduplicate the
-# source corpus itself by normalized title + artist.
-spotify_df = add_match_keys(spotify_df)
-labeled_keys = set()
-for labeled_df in [train_df, val_df, final_test_df]:
-    keyed = add_match_keys(labeled_df)
-    labeled_keys.update(zip(keyed["_title_key"], keyed["_artist_key"]))
-source_keys = list(zip(spotify_df["_title_key"], spotify_df["_artist_key"]))
-not_labeled_mask = [key not in labeled_keys for key in source_keys]
-removed_labeled_overlap = int(len(spotify_df) - sum(not_labeled_mask))
-spotify_df = spotify_df.loc[not_labeled_mask].copy()
-before_source_dedup = len(spotify_df)
-spotify_df = spotify_df.drop_duplicates(subset=["_title_key", "_artist_key"], keep="first")
-removed_source_duplicates = before_source_dedup - len(spotify_df)
-spotify_df = spotify_df.drop(columns=["_title_key", "_artist_key"]).reset_index(drop=True)
 
 print(f"Training songs: {len(train_df):,}")
 print(f"Validation songs: {len(val_df):,}")
 print(f"Held-out test songs: {len(final_test_df):,}")
-print(f"Original Spotify rows remaining for pseudo-labeling: {len(spotify_df):,}")
-print(f"Removed source rows matching labeled splits: {removed_labeled_overlap:,}")
-print(f"Removed duplicate source title/artist pairs: {removed_source_duplicates:,}")
+print(f"Pseudo-label candidates: {len(unlabeled_df):,}")
 print("\nTraining distribution:")
 print(train_df[LABEL_COL].value_counts())
+
+for name, df in [("Training", train_df), ("Validation", val_df), ("Held-out test", final_test_df)]:
+    missing_classes = set(LABELS) - set(df[LABEL_COL].unique())
+    if missing_classes:
+        raise ValueError(f"{name} split is missing classes: {sorted(missing_classes)}")
 
 train_df = train_df.copy()
 val_df = val_df.copy()
@@ -236,6 +177,7 @@ final_test_df = final_test_df.copy()
 train_df["labels"] = train_df[LABEL_COL].map(LABEL2ID)
 val_df["labels"] = val_df[LABEL_COL].map(LABEL2ID)
 final_test_df["labels"] = final_test_df[LABEL_COL].map(LABEL2ID)
+
 
 # ============================================================
 # TOKENIZATION AND SHARED DATASETS
@@ -270,6 +212,7 @@ def make_dataset(df, include_labels=True):
 train_dataset = make_dataset(train_df)
 val_dataset = make_dataset(val_df)
 test_dataset = make_dataset(final_test_df)
+unlabeled_dataset = make_dataset(unlabeled_df, include_labels=False)
 data_collator = DataCollatorWithPadding(tokenizer=tokenizer)
 
 
@@ -529,97 +472,45 @@ tokenizer.save_pretrained(OUTPUT_DIR)
 
 
 # ============================================================
-# PSEUDO-LABEL THE FULL SPOTIFY CORPUS, THEN BUILD BALANCED 40K
+# PSEUDO-LABEL TRAINING CANDIDATE POOL
 # ============================================================
 
 best_trainer = best_run["trainer"]
 CONFIDENCE_THRESHOLD = best_run["threshold"]
-all_result_chunks = []
-
-print(f"\nPseudo-labeling {len(spotify_df):,} Spotify songs in chunks of {PREDICTION_CHUNK_SIZE:,}...")
-for start_idx in range(0, len(spotify_df), PREDICTION_CHUNK_SIZE):
-    end_idx = min(start_idx + PREDICTION_CHUNK_SIZE, len(spotify_df))
-    chunk = spotify_df.iloc[start_idx:end_idx].reset_index(drop=True)
-    chunk_dataset = make_dataset(chunk, include_labels=False)
-    prediction_output = best_trainer.predict(chunk_dataset)
-    probabilities = torch.softmax(torch.tensor(prediction_output.predictions), dim=-1).numpy()
-    predicted_ids = np.argmax(probabilities, axis=1)
-    confidence = probabilities.max(axis=1)
-
-    chunk_results = chunk.copy()
-    chunk_results["predicted_label"] = [ID2LABEL[int(i)] for i in predicted_ids]
-    chunk_results["confidence"] = confidence
-    for class_id, label in ID2LABEL.items():
-        chunk_results[f"prob_{label}"] = probabilities[:, class_id]
-    chunk_results[LABEL_COL] = chunk_results["predicted_label"]
-    chunk_results["meets_confidence_threshold"] = confidence >= CONFIDENCE_THRESHOLD
-    chunk_results["needs_revision"] = confidence < CONFIDENCE_THRESHOLD
-    all_result_chunks.append(chunk_results)
-    print(f"Predicted {end_idx:,}/{len(spotify_df):,}")
-
-if all_result_chunks:
-    results = pd.concat(all_result_chunks, ignore_index=True)
-else:
-    results = pd.DataFrame(columns=["song_title", "artist", "lyrics", "predicted_label", "confidence", LABEL_COL])
+prediction_output = best_trainer.predict(unlabeled_dataset)
+probabilities = torch.softmax(torch.tensor(prediction_output.predictions), dim=-1).numpy()
+predicted_ids = np.argmax(probabilities, axis=1)
+confidence = probabilities.max(axis=1)
+results = unlabeled_df.copy()
+results["predicted_label"] = [ID2LABEL[int(i)] for i in predicted_ids]
+results["confidence"] = confidence
+for i, label in ID2LABEL.items():
+    results[f"prob_{label}"] = probabilities[:, i]
+# Keep every song labeled. Confidence controls review status, not label presence.
+results["needs_revision"] = (confidence < CONFIDENCE_THRESHOLD).astype(bool)
+results[LABEL_COL] = results["predicted_label"]
 
 val_median_confidence = float(np.median(best_run["val_confidence"]))
-pool_median_confidence = float(results["confidence"].median()) if len(results) else float("nan")
-if len(results) and pool_median_confidence < val_median_confidence - 0.10:
+pool_median_confidence = float(np.median(confidence)) if len(confidence) else float("nan")
+if len(confidence) and pool_median_confidence < val_median_confidence - 0.10:
     print(
-        "WARNING: Median confidence on the Spotify corpus is more than 0.10 below "
-        "validation. The selected threshold may not transfer reliably."
+        "WARNING: Median confidence on the unlabeled pool is more than 0.10 "
+        "below validation. The selected threshold may not transfer reliably."
     )
 
-# Save every prediction first, including low-confidence rows for auditing.
-results.to_csv(OUTPUT_ALL_PSEUDO_LABELS, index=False)
-print(f"\nAll pseudo-label predictions saved to: {OUTPUT_ALL_PSEUDO_LABELS}")
-print(f"Songs processed: {len(results):,}")
+results.to_csv(OUTPUT_FILE, index=False)
+print("\nPseudo-labeling completed!")
+print(f"Output: {OUTPUT_FILE}")
+print(f"Songs processed: {len(results)}")
 print(f"Selected model seed: {best_run['seed']}")
-print(f"Validation-selected confidence threshold: {CONFIDENCE_THRESHOLD:.2f}")
-print("\nPredicted class distribution (all songs):")
+print(f"Confidence threshold used: {CONFIDENCE_THRESHOLD:.2f}")
+print("\nAll predicted class distribution:")
 print(results["predicted_label"].value_counts())
-print("\nConfident class distribution:")
-confident = results[results["meets_confidence_threshold"]].copy()
-print(confident["predicted_label"].value_counts())
-print("Rows below threshold:", int((~results["meets_confidence_threshold"]).sum()))
-print("Mean confidence:", round(float(results["confidence"].mean()), 4) if len(results) else float("nan"))
-print("Confidence quantiles:", results["confidence"].quantile([0, .25, .5, .75, .9, 1]).round(3).to_dict() if len(results) else {})
+print("\nFinal safety_label distribution (all songs retain predictions):")
+print(results[LABEL_COL].value_counts(dropna=False))
+print("\nSongs needing revision (needs_revision=True):", int(results["needs_revision"].sum()))
+print("Mean confidence:", round(float(confidence.mean()), 4))
+print("Unlabeled-pool confidence quantiles:", pd.Series(confidence).quantile([0, .25, .5, .75, .9, 1]).round(3).to_dict())
 print(f"Validation median confidence: {val_median_confidence:.3f}")
-print(f"Spotify median confidence: {pool_median_confidence:.3f}")
-
-# Select the most confident qualifying songs in each predicted class. Never lower
-# the threshold to fill quotas: fail clearly if a class has insufficient supply.
-class_targets = {label: TARGET_PER_CLASS for label in LABELS}
-class_targets["safe"] += 1  # 13,334 + 13,333 + 13,333 = exactly 40,000
-selected_parts = []
-shortages = {}
-for label in LABELS:
-    class_pool = confident[confident["predicted_label"] == label].sort_values(
-        "confidence", ascending=False
-    )
-    target = class_targets[label]
-    if len(class_pool) < target:
-        shortages[label] = {"available": int(len(class_pool)), "required": int(target)}
-    else:
-        selected_parts.append(class_pool.head(target))
-
-if shortages:
-    raise RuntimeError(
-        "Could not create the balanced 40k dataset without weakening the confidence "
-        f"threshold. Per-class shortages: {shortages}. The full predictions are still "
-        f"saved at {OUTPUT_ALL_PSEUDO_LABELS}. Increase the source pool or review the "
-        "threshold-selection policy before retrying."
-    )
-
-balanced_40k = pd.concat(selected_parts, ignore_index=True)
-balanced_40k = balanced_40k.sample(frac=1, random_state=RANDOM_SEED).reset_index(drop=True)
-balanced_40k.to_csv(OUTPUT_BALANCED_40K, index=False)
-
-print("\nBALANCED DATASET CREATED")
-print(f"Output: {OUTPUT_BALANCED_40K}")
-print(f"Rows: {len(balanced_40k):,}")
-print("Class distribution:")
-print(balanced_40k[LABEL_COL].value_counts())
-print("Minimum selected confidence by class:")
-print(balanced_40k.groupby(LABEL_COL)["confidence"].min().round(4))
-print("All selected rows meet the validation-selected confidence threshold.")
+print(f"Unlabeled-pool median confidence: {pool_median_confidence:.3f}")
+print("All rows retain a predicted safety_label. Rows with needs_revision=True are provisional and should be reviewed before being treated as confirmed labels.")
