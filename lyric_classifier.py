@@ -274,7 +274,7 @@ class RoBERTaCNNLSTM(nn.Module):
             hidden_size=lstm_hidden_size,
             num_layers=lstm_layers,
             batch_first=True,
-            bidirectional=True,
+            bidirectional=False,
             dropout=(
                 dropout
                 if lstm_layers > 1
@@ -289,7 +289,7 @@ class RoBERTaCNNLSTM(nn.Module):
         self.classifier = nn.Sequential(
 
             nn.Linear(
-                lstm_hidden_size * 2,
+                lstm_hidden_size,
                 128
             ),
 

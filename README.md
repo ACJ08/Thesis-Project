@@ -6,7 +6,7 @@ A deep learning-based text classification system for classifying song lyrics int
 * **Mild**
 * **Explicit**
 
-The system uses a hybrid **RoBERTa → CNN → BiLSTM** architecture for lyric classification and provides **LIME** and **SHAP** explanations for model predictions.
+The system uses a hybrid **RoBERTa → CNN → LSTM** architecture for lyric classification and provides **LIME** and **SHAP** explanations for model predictions.
 
 ---
 
@@ -14,7 +14,7 @@ The system uses a hybrid **RoBERTa → CNN → BiLSTM** architecture for lyric c
 
 * RoBERTa-based contextual text representation
 * CNN layers for extracting local textual patterns
-* Bidirectional LSTM (BiLSTM) for sequential context
+* Bidirectional LSTM for sequential context
 * Three-class lyric explicitness classification
 * Separate training, validation, and test datasets
 * Best-model selection based on validation accuracy
@@ -39,7 +39,7 @@ Song Lyrics
     CNN
      │
      ▼
-   BiLSTM
+   LSTM
      │
      ▼
  Classifier
@@ -56,13 +56,13 @@ RoBERTa is used to generate contextual representations of the lyrics.
 
 Two one-dimensional convolutional layers are used to capture local patterns in the token representations.
 
-### BiLSTM
+### LSTM
 
-A bidirectional LSTM processes the sequence produced by the CNN layers, allowing the model to use contextual information from both directions.
+A unidirectional LSTM processes the sequence produced by the CNN layers, allowing the model to use contextual information from both directions.
 
 ### Classifier
 
-The BiLSTM representation is passed through fully connected layers to produce predictions for the three explicitness classes.
+The LSTM representation is passed through fully connected layers to produce predictions for the three explicitness classes.
 
 ---
 
@@ -209,7 +209,7 @@ The program will:
 2. Preprocess the datasets.
 3. Load the RoBERTa tokenizer.
 4. Create the PyTorch datasets and dataloaders.
-5. Initialize the RoBERTa → CNN → BiLSTM model.
+5. Initialize the RoBERTa → CNN → LSTM model.
 6. Train the model using the training dataset.
 7. Evaluate the model against the validation dataset after each epoch.
 8. Save the model with the best validation accuracy.
