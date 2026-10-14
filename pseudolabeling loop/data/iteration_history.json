@@ -1,0 +1,64 @@
+{
+  "version": 1,
+  "best_macro_f1": 0.806336327634502,
+  "best_iteration": 2,
+  "plateau_counter": 3,
+  "stopped": true,
+  "runs": [
+    {
+      "iteration": 1,
+      "timestamp_utc": "2026-10-14T07:32:34.005983+00:00",
+      "training_fingerprint": "a2a0b71f4fe19ab6619825d7107de7acd83ad378d9a8689d162dd04788c697cd",
+      "training_count": 1250,
+      "reviewed_count": 250,
+      "validation_macro_f1": 0.7573563989299784,
+      "validation_accuracy": 0.86,
+      "significant_improvement": true,
+      "plateau_counter": 0
+    },
+    {
+      "iteration": 2,
+      "timestamp_utc": "2026-10-14T07:49:12.292936+00:00",
+      "training_fingerprint": "133e12ee84a1e121be0f354ddf2b881f51fd0f2b95e266a7a0fec403329be049",
+      "training_count": 7220,
+      "reviewed_count": 6220,
+      "validation_macro_f1": 0.806336327634502,
+      "validation_accuracy": 0.892,
+      "significant_improvement": true,
+      "plateau_counter": 0
+    },
+    {
+      "iteration": 3,
+      "timestamp_utc": "2026-10-14T08:06:20.341402+00:00",
+      "training_fingerprint": "e168e440830a5261ad802efc9ef5740512a997983faec53da826a8e0e513e050",
+      "training_count": 8843,
+      "reviewed_count": 7843,
+      "validation_macro_f1": 0.7328658752734284,
+      "validation_accuracy": 0.86,
+      "significant_improvement": false,
+      "plateau_counter": 1
+    },
+    {
+      "iteration": 4,
+      "timestamp_utc": "2026-10-14T08:32:41.804946+00:00",
+      "training_fingerprint": "bedbad9c0d698c0327751b2c4a2667240e5a69a3af26195401f0ddaa289c4edc",
+      "training_count": 15685,
+      "reviewed_count": 14685,
+      "validation_macro_f1": 0.7333255141136915,
+      "validation_accuracy": 0.844,
+      "significant_improvement": false,
+      "plateau_counter": 2
+    },
+    {
+      "iteration": 5,
+      "timestamp_utc": "2026-10-14T08:54:20.734012+00:00",
+      "training_fingerprint": "74d6387c5d2814ee04cc471bd046c8b534f16a82bf80075d0ea91065a24f5499",
+      "training_count": 15686,
+      "reviewed_count": 14686,
+      "validation_macro_f1": 0.7530474155474156,
+      "validation_accuracy": 0.856,
+      "significant_improvement": false,
+      "plateau_counter": 3
+    }
+  ]
+}
