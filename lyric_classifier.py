@@ -84,9 +84,9 @@ REUSE_EXISTING_MODEL = True
 FORCE_RETRAIN = False
 EXISTING_MODEL_PATHS = [
     MODEL_SAVE_PATH,
-    PROJECT_DIR / "saved_model" / "lyric_classifier_v17.pt",
-    PROJECT_DIR / "saved_model" / "lyric_classifier_v16.pt",
-    PROJECT_DIR / "saved_model" / "lyric_classifier_v15.pt",
+    PROJECT_DIR / "saved_model" / "lyric_classifier_v20.pt",
+    PROJECT_DIR / "saved_model" / "lyric_classifier_v19.pt",
+    PROJECT_DIR / "saved_model" / "lyric_classifier_v18.pt",
 ]
 
 # Safe module-level configuration: selecting a device does not start training.
