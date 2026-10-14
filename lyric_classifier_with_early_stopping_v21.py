@@ -72,7 +72,7 @@ EPOCHS = 10
 EARLY_STOPPING_PATIENCE = 2
 EARLY_STOPPING_MIN_DELTA = 0.001
 
-LEARNING_RATE = 1e-5
+LEARNING_RATE = 2e-5
 
 WARMUP_RATIO = 0.10
 
@@ -231,7 +231,7 @@ class RoBERTaCNNLSTM(nn.Module):
         num_classes=3,
         lstm_hidden_size=128,
         lstm_layers=1,
-        dropout=0.4
+        dropout=0.3
     ):
 
         super().__init__()

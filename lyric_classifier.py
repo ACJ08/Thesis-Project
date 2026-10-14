@@ -69,7 +69,7 @@ GRADIENT_ACCUMULATION_STEPS = 4
 
 EPOCHS = 3
 
-LEARNING_RATE = 1e-5 #testing, initial was 2e-5
+LEARNING_RATE = 2e-5
 
 WARMUP_RATIO = 0.10
 
@@ -234,7 +234,7 @@ class RoBERTaCNNLSTM(nn.Module):
         num_classes=3,
         lstm_hidden_size=128,
         lstm_layers=1,
-        dropout=0.4
+        dropout=0.3
     ):
 
         super().__init__()
