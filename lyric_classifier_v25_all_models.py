@@ -90,16 +90,16 @@ RANDOM_SEED = 67
 # Choose "all_models" (hybrid then all three baselines), "hybrid",
 # "bert_cnn_lstm", "lstm_cnn", "roberta", "all_baselines", or "compare".
 # "compare" only reads frozen test predictions; it never trains or touches raw test lyrics.
-EXPERIMENT_MODE = "all_models"
+EXPERIMENT_MODE = "compare"
 # Independent baseline smoke tests use SMOKE_TEST=True, just like the hybrid.
 # Held-out testing is performed separately with FROZEN_TEST_EVALUATION=True.
-FROZEN_TEST_EVALUATION = False
+FROZEN_TEST_EVALUATION = True
 # Map each trained model to its checkpoint's run folder for frozen evaluation.
 FROZEN_RUN_DIRS = {
-    "hybrid": "",
-    "bert_cnn_lstm": "",
-    "lstm_cnn": "",
-    "roberta": "",
+    "hybrid": str(PROJECT_DIR / "saved_models" / "hybrid_v25_20261014T150657Z"),
+    "bert_cnn_lstm": str(PROJECT_DIR / "saved_models" / "bert_cnn_lstm_v25_20261014T150657Z"),
+    "lstm_cnn": str(PROJECT_DIR / "saved_models" / "lstm_cnn_v25_20261014T150657Z"),
+    "roberta": str(PROJECT_DIR / "saved_models" / "roberta_v25_20261015T030347Z"),
 }
 # Baseline-specific hyperparameters; keep and report the chosen settings.
 BASELINE_LSTM_EMBED_DIM = 256
@@ -117,7 +117,7 @@ RUN_DEMO_EXPLANATIONS = False  # SHAP can be extremely expensive.
 RUN_PADDING_INVARIANCE_CHECK = True
 PADDING_TOLERANCE = 1e-4  # diagnostic reference, not a guarantee of semantic equivalence
 PADDING_HARD_FAIL_AFTER_TRAINING = False  # turn on after inspecting actual differences
-SMOKE_TEST = True  # True: small stratified engineering run, NOT thesis results
+SMOKE_TEST = False  # True: small stratified engineering run, NOT thesis results
 SMOKE_TRAIN_ROWS = 500
 SMOKE_VAL_ROWS = 100
 # Setting EXCLUDE_NEEDS_REVISION=False intentionally includes UNREVIEWED flagged rows.
