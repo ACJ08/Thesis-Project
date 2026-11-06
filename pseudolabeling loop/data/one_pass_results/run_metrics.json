@@ -1,0 +1,223 @@
+{
+  "completed_at_utc": "2026-11-06T08:19:34.367664+00:00",
+  "model_name": "distilbert-base-uncased",
+  "random_seed": 42,
+  "input_files": {
+    "labeled": "labeled.csv",
+    "unlabeled": "merged_excluding_labeled.csv"
+  },
+  "counts": {
+    "train": 5000,
+    "validation": 500,
+    "test": 500,
+    "pseudo_labeled": 34000,
+    "review_suggestions": 16933,
+    "training_with_pseudo": 39000,
+    "complete": 40000
+  },
+  "training_labels_provenance": "provided; not assumed independently verified",
+  "long_lyrics_handling": {
+    "max_window_tokens_including_specials": 512,
+    "overlap_content_tokens": 64,
+    "chunk_pooling": "max severity of per-window argmax classes; evidence from highest-confidence selected-class window",
+    "confidence_definition": "softmax probability of the selected evidence window, NOT calibrated song accuracy",
+    "train_window_count": 7542,
+    "validation_window_count": 739,
+    "test_window_count": 758,
+    "candidate_window_count": 51352,
+    "candidate_songs_with_multiple_windows": 12823,
+    "candidate_songs_with_window_disagreement": 4284
+  },
+  "validation": {
+    "accuracy": 0.704,
+    "macro_f1": 0.6787722748825189,
+    "classification_report": {
+      "safe": {
+        "precision": 0.8081632653061225,
+        "recall": 0.8354430379746836,
+        "f1-score": 0.8215767634854771,
+        "support": 237.0
+      },
+      "mild": {
+        "precision": 0.5984848484848485,
+        "recall": 0.47023809523809523,
+        "f1-score": 0.5266666666666666,
+        "support": 168.0
+      },
+      "explicit": {
+        "precision": 0.6097560975609756,
+        "recall": 0.7894736842105263,
+        "f1-score": 0.6880733944954128,
+        "support": 95.0
+      },
+      "accuracy": 0.704,
+      "macro avg": {
+        "precision": 0.6721347371173155,
+        "recall": 0.6983849391411017,
+        "f1-score": 0.6787722748825189,
+        "support": 500.0
+      },
+      "weighted avg": {
+        "precision": 0.7000139553825966,
+        "recall": 0.704,
+        "f1-score": 0.6971213308462445,
+        "support": 500.0
+      }
+    },
+    "confusion_matrix_true_rows": [
+      [
+        198,
+        34,
+        5
+      ],
+      [
+        46,
+        79,
+        43
+      ],
+      [
+        1,
+        19,
+        75
+      ]
+    ]
+  },
+  "held_out_test": {
+    "accuracy": 0.71,
+    "macro_f1": 0.6935882868218535,
+    "classification_report": {
+      "safe": {
+        "precision": 0.8454545454545455,
+        "recall": 0.7848101265822784,
+        "f1-score": 0.8140043763676149,
+        "support": 237.0
+      },
+      "mild": {
+        "precision": 0.5961538461538461,
+        "recall": 0.5568862275449101,
+        "f1-score": 0.5758513931888545,
+        "support": 167.0
+      },
+      "explicit": {
+        "precision": 0.6129032258064516,
+        "recall": 0.7916666666666666,
+        "f1-score": 0.6909090909090909,
+        "support": 96.0
+      },
+      "accuracy": 0.71,
+      "macro avg": {
+        "precision": 0.6848372058049477,
+        "recall": 0.7111210069312851,
+        "f1-score": 0.6935882868218535,
+        "support": 500.0
+      },
+      "weighted avg": {
+        "precision": 0.7175382585156779,
+        "recall": 0.71,
+        "f1-score": 0.7108269851778724,
+        "support": 500.0
+      }
+    },
+    "confusion_matrix_true_rows": [
+      [
+        186,
+        45,
+        6
+      ],
+      [
+        32,
+        93,
+        42
+      ],
+      [
+        2,
+        18,
+        76
+      ]
+    ]
+  },
+  "review_threshold": 0.8,
+  "review_threshold_reason": "fallback: near highest observed accepted accuracy (90% not demonstrated)",
+  "review_flag_definition": "low selected-window confidence OR disagreement among window predicted classes",
+  "threshold_analysis_validation_only": [
+    {
+      "threshold": 0.5,
+      "accepted_count": 489,
+      "coverage": 0.978,
+      "accepted_accuracy": 0.7116564417177914,
+      "accepted_by_predicted_class": {
+        "safe": 244,
+        "mild": 127,
+        "explicit": 118
+      },
+      "eligible_count": true
+    },
+    {
+      "threshold": 0.6,
+      "accepted_count": 429,
+      "coverage": 0.858,
+      "accepted_accuracy": 0.745920745920746,
+      "accepted_by_predicted_class": {
+        "safe": 231,
+        "mild": 96,
+        "explicit": 102
+      },
+      "eligible_count": true
+    },
+    {
+      "threshold": 0.7,
+      "accepted_count": 354,
+      "coverage": 0.708,
+      "accepted_accuracy": 0.7711864406779662,
+      "accepted_by_predicted_class": {
+        "safe": 209,
+        "mild": 58,
+        "explicit": 87
+      },
+      "eligible_count": true
+    },
+    {
+      "threshold": 0.8,
+      "accepted_count": 258,
+      "coverage": 0.516,
+      "accepted_accuracy": 0.8372093023255814,
+      "accepted_by_predicted_class": {
+        "safe": 187,
+        "mild": 8,
+        "explicit": 63
+      },
+      "eligible_count": true
+    },
+    {
+      "threshold": 0.9,
+      "accepted_count": 150,
+      "coverage": 0.3,
+      "accepted_accuracy": 0.8666666666666667,
+      "accepted_by_predicted_class": {
+        "safe": 129,
+        "mild": 0,
+        "explicit": 21
+      },
+      "eligible_count": false
+    },
+    {
+      "threshold": 0.95,
+      "accepted_count": 43,
+      "coverage": 0.086,
+      "accepted_accuracy": 0.9302325581395349,
+      "accepted_by_predicted_class": {
+        "safe": 43,
+        "mild": 0,
+        "explicit": 0
+      },
+      "eligible_count": false
+    }
+  ],
+  "pseudo_label_distribution": {
+    "safe": 16255,
+    "mild": 9856,
+    "explicit": 7889
+  },
+  "previous_candidate_label_count": 1272,
+  "complete_export": "C:\\Users\\Sephie\\OneDrive\\Desktop\\Thesis\\actual project\\Thesis-Project\\pseudolabeling loop\\data\\Training.csv"
+}

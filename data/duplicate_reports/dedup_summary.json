@@ -1,0 +1,55 @@
+{
+  "created_utc": "2026-11-06T10:06:03.206927+00:00",
+  "policy": {
+    "priority": [
+      "Validation",
+      "Testing",
+      "Training"
+    ],
+    "same_title_and_artist": "Remove lower-priority records even if lyric versions differ",
+    "normalized_lyrics_exact": "Remove if at least 20 words",
+    "short_exact_lyrics": "Retain, flag for review",
+    "near_matches": "Not scanned",
+    "near_scan_is_exhaustive": false,
+    "auto_threshold_jaccard_and_ratio": 0.985
+  },
+  "counts": {
+    "Training": {
+      "original": 40000,
+      "removed": 41,
+      "cleaned": 39959,
+      "input": "C:\\Users\\Sephie\\OneDrive\\Desktop\\Thesis\\actual project\\Thesis-Project\\data\\Training.csv",
+      "output": "C:\\Users\\Sephie\\OneDrive\\Desktop\\Thesis\\actual project\\Thesis-Project\\data\\Training_Cleaned.csv"
+    },
+    "Validation": {
+      "original": 5000,
+      "removed": 0,
+      "cleaned": 5000,
+      "input": "C:\\Users\\Sephie\\OneDrive\\Desktop\\Thesis\\actual project\\Thesis-Project\\data\\Validation.csv",
+      "output": "C:\\Users\\Sephie\\OneDrive\\Desktop\\Thesis\\actual project\\Thesis-Project\\data\\Validation_Cleaned.csv"
+    },
+    "Testing": {
+      "original": 4999,
+      "removed": 0,
+      "cleaned": 4999,
+      "input": "C:\\Users\\Sephie\\OneDrive\\Desktop\\Thesis\\actual project\\Thesis-Project\\data\\Testing.csv",
+      "output": "C:\\Users\\Sephie\\OneDrive\\Desktop\\Thesis\\actual project\\Thesis-Project\\data\\Testing_Cleaned.csv"
+    }
+  },
+  "total_rows_original": 49999,
+  "total_rows_cleaned": 49958,
+  "removal_reasons": {
+    "normalized_title_and_artist": 29,
+    "identical_normalized_lyrics": 12
+  },
+  "removed_training_subsplit_counts": {
+    "train": 3,
+    "pseudo_labeled": 38
+  },
+  "label_conflicts_among_removed": 8,
+  "review_pair_count": 16,
+  "reports": [
+    "C:\\Users\\Sephie\\OneDrive\\Desktop\\Thesis\\actual project\\Thesis-Project\\data\\duplicate_reports\\duplicate_removals.csv",
+    "C:\\Users\\Sephie\\OneDrive\\Desktop\\Thesis\\actual project\\Thesis-Project\\data\\duplicate_reports\\possible_duplicates_review.csv"
+  ]
+}
