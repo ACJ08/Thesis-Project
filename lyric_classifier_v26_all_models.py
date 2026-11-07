@@ -110,23 +110,23 @@ RANDOM_SEED = 67
 # Choose "all_models" (hybrid then all three baselines), "hybrid",
 # "bert_cnn_lstm", "lstm_cnn", "roberta", "all_baselines", or "compare".
 # "compare" only reads frozen test predictions; it never trains or touches raw test lyrics.
-EXPERIMENT_MODE = "all_models"
+EXPERIMENT_MODE = "compare"
 # Independent baseline smoke tests use SMOKE_TEST=True, just like the hybrid.
 # Held-out testing is performed separately with FROZEN_TEST_EVALUATION=True.
-FROZEN_TEST_EVALUATION = False
+FROZEN_TEST_EVALUATION = True
 # Map each trained model to its checkpoint's run folder for frozen evaluation.
 FROZEN_RUN_DIRS = {
-    "hybrid": "",          # Set to a new v26 hybrid experiment directory for compare mode
-    "bert_cnn_lstm": "",   # Set to the matching new v26 baseline directory
-    "lstm_cnn": "",
-    "roberta": "",
+    "hybrid": r"C:\Users\Sephie\OneDrive\Desktop\Thesis\actual project\Thesis-Project\experiments\hybrid_v26_20261107T000459Z",          # Set to a new v26 hybrid experiment directory for compare mode
+    "bert_cnn_lstm": r"C:\Users\Sephie\OneDrive\Desktop\Thesis\actual project\Thesis-Project\experiments\bert_cnn_lstm_v26_20261107T000459Z",   # Set to the matching new v26 baseline directory
+    "lstm_cnn": r"C:\Users\Sephie\OneDrive\Desktop\Thesis\actual project\Thesis-Project\experiments\lstm_cnn_v26_20261107T000459Z",
+    "roberta": r"C:\Users\Sephie\OneDrive\Desktop\Thesis\actual project\Thesis-Project\experiments\roberta_v26_20261107T000459Z",
 }
 
 
 # Baseline-specific hyperparameters; keep and report the chosen settings.
 BASELINE_LSTM_EMBED_DIM = 256
 BASELINE_LSTM_HIDDEN = 128
-BASELINE_VOCAB_LIMIT = 30000
+BASELINE_VOCAB_LIMIT = 30000    
 BASELINE_VOCAB_MIN_FREQ = 2
 BASELINE_LEARNING_RATE = 2e-5  # transformer baselines
 BASELINE_LSTM_LEARNING_RATE = 1e-3
@@ -139,7 +139,8 @@ RUN_DEMO_EXPLANATIONS = False  # SHAP can be extremely expensive.
 RUN_PADDING_INVARIANCE_CHECK = True
 PADDING_TOLERANCE = 1e-4  # diagnostic reference, not a guarantee of semantic equivalence
 PADDING_HARD_FAIL_AFTER_TRAINING = False  # turn on after inspecting actual differences
-SMOKE_TEST = True  # Start with a one-epoch engineering check; change to False for real thesis training
+SMOKE_TEST = False  # Start with a one-epoch engineering check; change to False for real thesis training
+ALLOW_SMOKE_COMPARISON = False  # Debugging only
 SMOKE_TRAIN_ROWS = 500
 SMOKE_VAL_ROWS = 100
 # Setting EXCLUDE_NEEDS_REVISION=False intentionally includes UNREVIEWED flagged rows.
@@ -1830,8 +1831,10 @@ def evaluate_frozen_checkpoints():
         if not manifest_file.is_file() or not checkpoint_file.is_file():
             raise FileNotFoundError(f"Missing frozen run files: {candidate_dir}")
         meta = json.loads(manifest_file.read_text(encoding="utf-8"))
-        if meta.get("smoke_test") or meta.get("input_sha256") != expected_hashes:
-            raise ValueError(f"Smoke run or input-hash mismatch: {candidate_dir}")
+        if meta.get("smoke_test") and not ALLOW_SMOKE_COMPARISON:
+            raise ValueError(f"Smoke-test checkpoint not allowed: {candidate_dir}")
+        if meta.get("input_sha256") != expected_hashes:
+            raise ValueError(f"Input-hash mismatch: {candidate_dir}")
         if meta.get("pipeline_version") != PIPELINE_VERSION or any(
                 meta.get(field) != value for field, value in window_policy().items()):
             raise ValueError(f"Incompatible/truncated non-v26 windowing policy: {candidate_dir}")

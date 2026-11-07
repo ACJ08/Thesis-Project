@@ -1,5 +1,5 @@
 {
-  "created_utc": "2026-11-06T10:06:03.206927+00:00",
+  "created_utc": "2026-11-06T17:30:45.483744+00:00",
   "policy": {
     "priority": [
       "Validation",
@@ -15,9 +15,9 @@
   },
   "counts": {
     "Training": {
-      "original": 40000,
-      "removed": 41,
-      "cleaned": 39959,
+      "original": 6000,
+      "removed": 3,
+      "cleaned": 5997,
       "input": "C:\\Users\\Sephie\\OneDrive\\Desktop\\Thesis\\actual project\\Thesis-Project\\data\\Training.csv",
       "output": "C:\\Users\\Sephie\\OneDrive\\Desktop\\Thesis\\actual project\\Thesis-Project\\data\\Training_Cleaned.csv"
     },
@@ -36,18 +36,16 @@
       "output": "C:\\Users\\Sephie\\OneDrive\\Desktop\\Thesis\\actual project\\Thesis-Project\\data\\Testing_Cleaned.csv"
     }
   },
-  "total_rows_original": 49999,
-  "total_rows_cleaned": 49958,
+  "total_rows_original": 15999,
+  "total_rows_cleaned": 15996,
   "removal_reasons": {
-    "normalized_title_and_artist": 29,
-    "identical_normalized_lyrics": 12
+    "normalized_title_and_artist": 3
   },
   "removed_training_subsplit_counts": {
-    "train": 3,
-    "pseudo_labeled": 38
+    "": 3
   },
-  "label_conflicts_among_removed": 8,
-  "review_pair_count": 16,
+  "label_conflicts_among_removed": 2,
+  "review_pair_count": 2,
   "reports": [
     "C:\\Users\\Sephie\\OneDrive\\Desktop\\Thesis\\actual project\\Thesis-Project\\data\\duplicate_reports\\duplicate_removals.csv",
     "C:\\Users\\Sephie\\OneDrive\\Desktop\\Thesis\\actual project\\Thesis-Project\\data\\duplicate_reports\\possible_duplicates_review.csv"
