@@ -757,16 +757,26 @@ def predict_song_windows(text, model, tokenizer):
 
 def predict_lyrics(text, model, tokenizer):
     severity, confidence, _, _, _ = predict_song_windows(text, model, tokenizer)
-    return ID2LABEL[severity], confidence
-
+    return ID2LABEL[severity], confidence   
 
 def model_predict_proba(texts, model, tokenizer):
-    """Song-level inference over ALL windows (local evidence-window softmax)."""
+    """Song-level inference over ALL windows."""
     if isinstance(texts, str):
         texts = [texts]
-    if not texts:
-        return np.empty((0, len(LABEL2ID)), dtype=np.float32)
-    return np.stack([predict_song_windows(text, model, tokenizer)[4] for text in texts], axis=0)
+
+    if len(texts) == 0:
+        return np.empty(
+            (0, len(LABEL2ID)),
+            dtype=np.float32
+        )
+
+    return np.stack(
+        [
+            predict_song_windows(text, model, tokenizer)[4]
+            for text in texts
+        ],
+        axis=0
+    )
 
 def make_model_predict_proba(model, tokenizer):
     """Bind a model/tokenizer pair for explainers that expect a one-argument callable."""
