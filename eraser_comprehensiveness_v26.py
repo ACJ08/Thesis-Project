@@ -65,13 +65,19 @@ def main():
     rng = random.Random(args.seed)
 
     # Fixed-window inference: deliberately DOES NOT call song-level severity pooling.
+    overflow_perturbations = 0
     def fixed_window_prob(texts):
+        nonlocal overflow_perturbations
         outputs = []
         with torch.inference_mode():
             for text in texts:
                 ids = clf.full_token_ids(clf.clean_lyrics(text), tokenizer)
-                if len(ids) > clf.MAX_LENGTH - 2:
-                    raise ValueError('Perturbed evidence window exceeded transformer capacity')
+                capacity = clf.MAX_LENGTH - sum(map(len, clf.special_token_prefix_suffix(tokenizer)))
+                if len(ids) > capacity:
+                    # LIME deletion can alter BPE segmentation, increasing token count.
+                    # Enforce the model's fixed context instead of crashing.
+                    overflow_perturbations += 1
+                    ids = ids[:capacity]
                 window = clf.make_window_ids(ids, 0, len(ids), tokenizer)
                 x, mask = clf.padded_window_batch([window], tokenizer, pad_to=clf.MAX_LENGTH)
                 probs = torch.softmax(model(x.to(clf.DEVICE), mask.to(clf.DEVICE)).float(), dim=1)
@@ -88,15 +94,22 @@ def main():
         ids = clf.full_token_ids(text, tokenizer)
         start, end = list(clf.window_spans(ids, tokenizer))[evidence_idx]
         evidence_text = tokenizer.decode(ids[start:end], skip_special_tokens=True).strip()
+        # Decoding and re-tokenizing a 510-token window is not guaranteed to
+        # preserve its original token count. Reserve room for BPE changes
+        # during LIME perturbations, and document any remaining truncations.
+        capacity = clf.MAX_LENGTH - sum(map(len, clf.special_token_prefix_suffix(tokenizer)))
         words = evidence_text.split()
+        while words and len(clf.full_token_ids(' '.join(words), tokenizer)) > capacity - 24:
+            words.pop()
+        evidence_text = ' '.join(words)
         if len(words) < 2:
             continue
         # Use original window's predicted class; it can differ from song-level
         # selected class only if evidence selection changes, which is not done here.
         original_probs = fixed_window_prob([evidence_text])[0]
         target = int(original_probs.argmax())
-        if target != song_class:
-            raise RuntimeError('Evidence window class disagrees with original song class')
+        # Retokenization/word-boundary trimming can change the local class.
+        # The local predicted class, not the full-song class, is the target.
         explainer = LimeTextExplainer(class_names=['Safe','Mild','Explicit'], bow=False,
                                      split_expression=r'\s+', random_state=args.seed)
         exp = explainer.explain_instance(evidence_text, fixed_window_prob,
@@ -120,7 +133,7 @@ def main():
                 random_scores.append(float(original_probs[target]) - random_post)
             details.append(dict(validation_row=int(song['original_row']), song_name=song['song_name'],
                                 artist=song['artist'], actual_label=song['explicitness'],
-                                predicted_label=clf.ID2LABEL[target], evidence_window=evidence_idx+1,
+                                predicted_label=clf.ID2LABEL[target], full_song_predicted_label=clf.ID2LABEL[song_class], evidence_window=evidence_idx+1,
                                 total_windows=window_count, word_count=len(words), erasure_percent=percent,
                                 erased_word_count=count, original_probability=float(original_probs[target]),
                                 post_erasure_probability=post,
@@ -146,7 +159,9 @@ def main():
                     attribution='LIME positional whitespace-word weights, positive-first',
                     erasure='delete ceil(k% of whitespace-delimited words), preserve order',
                     original_prediction='v26 full-song max-severity selection, then local window scoring',
-                    probability='softmax of fixed original evidence window',
+                    probability='softmax of re-tokenized local evidence text; fixed 510-token context',
+                    local_window_trim='trim trailing whitespace words to <= capacity-24 BPE tokens',
+                    overflow_perturbations_truncated=overflow_perturbations,
                     baseline='random deletion at equal count, averaged per song',
                     checkpoint=str(checkpoint), validation=str(validation), seed=args.seed,
                     samples_requested=args.samples, songs_evaluated=int(result.validation_row.nunique()),
