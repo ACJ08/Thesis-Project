@@ -59,12 +59,18 @@ PROJECT_DIR = Path(__file__).resolve().parent
 TRAIN_CSV_FILE = "Training_Cleaned.csv"
 VAL_CSV_FILE = "Validation_Cleaned.csv"
 TEST_CSV_FILE = "Testing_Cleaned.csv"
+DATASET_OVERRIDES = {}
 
 
 def resolve_dataset_path(filename):
     """Find ONLY a cleaned dataset; never fall back to an uncleaned CSV."""
     if not filename.endswith("_Cleaned.csv"):
         raise ValueError(f"Refusing uncleaned dataset filename: {filename}")
+    if filename in DATASET_OVERRIDES:
+        path = Path(DATASET_OVERRIDES[filename])
+        if not path.is_file():
+            raise FileNotFoundError(path)
+        return path
     candidates = [
         PROJECT_DIR / "data" / filename,
         PROJECT_DIR.parent / "data" / filename,

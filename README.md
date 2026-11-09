@@ -8,6 +8,23 @@ A deep learning-based text classification system for classifying song lyrics int
 
 The system uses a hybrid **RoBERTa → CNN → LSTM** architecture for lyric classification and provides **LIME** and **SHAP** explanations for model predictions.
 
+## v26 desktop application
+
+From the project folder, run these commands using the Python environment for the classifier.
+
+```powershell
+python -m pip install -r requirements.txt
+python thesis_gui.py
+```
+
+Python needs Tkinter, which is included with the standard Windows Python installer when Tcl/Tk support is enabled. Transformer models may need to download their pretrained assets on first use. Jobs run in a background process and report progress in **Run log**.
+
+- **Training** lets you select one model, all three baselines, all four models, or the frozen held-out comparison. Smoke test is enabled by default. Leave the CSV fields blank to use the project's cleaned splits, or browse to separate labeled training, validation, and test CSVs. Frozen comparison requires four full v26 run folders and the same dataset hashes recorded during training.
+- **Classification** loads a trained checkpoint for inference. Paste one song or select a CSV and save a labeled copy. The CSV needs a `lyrics` or `text` column, or you can enter its column name. Original columns are preserved, and empty lyrics are skipped. The displayed probability belongs to the selected evidence window.
+- **LIME / SHAP** offers either method individually or **LIME + SHAP** in one run. Each method highlights features in the selected evidence window and reports signed contributions and comprehensiveness at 5%, 10%, and 20% erasure, with equal-count random deletion as a baseline. The status line and **Run log** show the current method and erasure stage. The validation action runs the selected methods on a stratified sample and writes per-song and summary CSVs under `eraser_results`.
+
+For labeling and explanations, choose an experiment folder containing `best_model.pt` or leave the field blank to use the newest local run for that model. LSTM–CNN also needs the matching `vocabulary.json`.
+
 ---
 
 ## Features
