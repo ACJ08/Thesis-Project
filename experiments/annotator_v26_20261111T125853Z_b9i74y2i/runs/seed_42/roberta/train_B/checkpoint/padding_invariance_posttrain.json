@@ -1,0 +1,85 @@
+{
+  "phase": "posttrain",
+  "reference_tolerance": 0.0001,
+  "hard_fail": false,
+  "max_absolute_difference": 1.5832483768463135e-08,
+  "any_argmax_flip": false,
+  "cases": [
+    {
+      "case": "short",
+      "validation_row_position": 300,
+      "song_window_count": 1,
+      "selected_window": 1,
+      "selected_window_tokens": 50,
+      "fixed_probabilities": [
+        0.9885962605476379,
+        0.008836229331791401,
+        0.0025674705393612385
+      ],
+      "dynamic_probabilities": [
+        0.9885962605476379,
+        0.0088362330570817,
+        0.0025674740318208933
+      ],
+      "mixed_probabilities": [
+        0.9885962605476379,
+        0.0088362330570817,
+        0.002567472867667675
+      ],
+      "max_absolute_difference": 3.725290298461914e-09,
+      "argmax_flip": false,
+      "exceeds_reference_tolerance": false
+    },
+    {
+      "case": "median",
+      "validation_row_position": 89,
+      "song_window_count": 1,
+      "selected_window": 1,
+      "selected_window_tokens": 388,
+      "fixed_probabilities": [
+        0.9932498931884766,
+        0.005304358899593353,
+        0.0014457611832767725
+      ],
+      "dynamic_probabilities": [
+        0.9932498931884766,
+        0.005304358899593353,
+        0.0014457611832767725
+      ],
+      "mixed_probabilities": [
+        0.9932498931884766,
+        0.005304358899593353,
+        0.0014457618817687035
+      ],
+      "max_absolute_difference": 6.984919309616089e-10,
+      "argmax_flip": false,
+      "exceeds_reference_tolerance": false
+    },
+    {
+      "case": "long",
+      "validation_row_position": 414,
+      "song_window_count": 6,
+      "selected_window": 6,
+      "selected_window_tokens": 125,
+      "fixed_probabilities": [
+        0.004596627317368984,
+        0.9326839447021484,
+        0.06271942704916
+      ],
+      "dynamic_probabilities": [
+        0.004596631042659283,
+        0.9326839447021484,
+        0.0627194419503212
+      ],
+      "mixed_probabilities": [
+        0.004596611484885216,
+        0.9326839447021484,
+        0.06271942704916
+      ],
+      "max_absolute_difference": 1.5832483768463135e-08,
+      "argmax_flip": false,
+      "exceeds_reference_tolerance": false
+    }
+  ],
+  "reference_pass": true
+}

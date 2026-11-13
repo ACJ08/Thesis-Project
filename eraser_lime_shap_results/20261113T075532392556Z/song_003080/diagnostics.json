@@ -1,0 +1,5 @@
+{
+  "lime_local_fit_r2": 0.4122545756893897,
+  "shap_base_value": 0.7793774008750916,
+  "shap_additivity_residual": 1.6653345369377348e-16
+}

@@ -1,0 +1,59 @@
+{
+  "datasets": {
+    "training": {
+      "path": "C:\\Users\\Sephie\\OneDrive\\Desktop\\Thesis Perturb Permute\\Thesis-Project\\data\\Training_Cleaned.csv",
+      "sha256": "0eac06a5bf566c4fe4bd1ee019c8487ba9d7f4787da6d2ba87ea72d0ebcc5d5e"
+    },
+    "validation": {
+      "path": "C:\\Users\\Sephie\\OneDrive\\Desktop\\Thesis Perturb Permute\\Thesis-Project\\data\\Validation_Cleaned.csv",
+      "sha256": "0c4bc601229dbbdd508a670808ae084e6a16badb6e8aed54a01c40f0398b4a12"
+    },
+    "test": {
+      "path": "C:\\Users\\Sephie\\OneDrive\\Desktop\\Thesis Perturb Permute\\Thesis-Project\\data\\Testing_Cleaned.csv",
+      "sha256": "fa40cac426ee291fccb891c127253f7b6bb6e2fc2afcd44a0800b367d3a9184a"
+    }
+  },
+  "models": [
+    "hybrid",
+    "bert_cnn_lstm",
+    "lstm_cnn",
+    "roberta"
+  ],
+  "sizes": [
+    1000,
+    2000,
+    3000,
+    4000,
+    5000,
+    5997
+  ],
+  "seeds": [
+    67
+  ],
+  "v26_sha256": "5ae7185a786b1a0083233fff32c406ad7cca86e926899808d4a8207a2e301ee4",
+  "runner_sha256": "56652cd728e48529eac6d2c0abc819c2557af028bd27cfc380601f63e82093ce",
+  "extrapolation_sizes": [],
+  "training_provenance": {
+    "human_verification_confirmed": false,
+    "nonmissing_provenance_fields": {},
+    "observed_label_sources": {},
+    "review_flagged_valid_rows": 0,
+    "uses_predicted_label_fallback": false
+  },
+  "holdout_interpretation": "The fixed holdouts may have informed earlier thesis experiments. Treat estimates as conditional on these datasets and prior model choices.",
+  "label_mapping": {
+    "Safe": 0,
+    "Mild": 1,
+    "Explicit": 2
+  },
+  "device": "cuda",
+  "dependencies": {
+    "torch": "2.13.0+cu132",
+    "transformers": "5.5.0",
+    "numpy": "2.5.2",
+    "pandas": "3.0.6",
+    "scikit-learn": "1.8.0",
+    "scipy": "1.17.1",
+    "matplotlib": "3.10.9"
+  }
+}

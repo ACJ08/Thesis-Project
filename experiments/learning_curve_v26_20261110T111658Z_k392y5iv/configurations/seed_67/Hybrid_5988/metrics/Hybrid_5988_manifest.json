@@ -1,0 +1,268 @@
+{
+  "run_id": "lc",
+  "smoke_test": false,
+  "smoke_train_target": null,
+  "smoke_val_target": null,
+  "architecture": "hybrid",
+  "max_length": 512,
+  "seed": 67,
+  "epochs_max": 10,
+  "batch_size": 2,
+  "accumulation_steps": 4,
+  "learning_rate": 2e-05,
+  "class_weighting": "inverse_frequency",
+  "exclude_needs_revision": false,
+  "preprocessing": "split overlap audit; structural lyric section headers removed from model input",
+  "input_policy": "ALL lyrics tokens via overlapping 512-token windows; NO first-window truncation",
+  "input_max_length": 512,
+  "pooling": "masked mean after unidirectional LSTM",
+  "run_padding_invariance_check": true,
+  "padding_hard_fail_after_training": false,
+  "padding_reference_tolerance": 0.0001,
+  "provenance": {
+    "raw_rows": 5988,
+    "flagged_before_filter": 0,
+    "retained_rows": 5988,
+    "exclude_needs_revision": false,
+    "needs_revision": {
+      "available": false
+    },
+    "needs_review": {
+      "available": false
+    },
+    "human_label": {
+      "available": false
+    },
+    "label_source": {
+      "available": false
+    },
+    "review_status": {
+      "available": false
+    },
+    "reviewed_by": {
+      "available": false
+    },
+    "annotator": {
+      "available": false
+    },
+    "human_verification_confirmed": false
+  },
+  "smoke_subset_provenance": null,
+  "gradient_objective": "sum (class-weighted cross-entropy * inverse song window count) / sum (class weight * inverse song window count) per effective batch",
+  "training_rows": 5988,
+  "validation_rows": 5000,
+  "test_rows": 4998,
+  "training_rows_before_review_filter": 5988,
+  "training_rows_flagged_needs_revision": 0,
+  "input_sha256": {
+    "training": "3ddf257eca804e3ee848f1314acecebade33460ca1b5c478810a52b4c8602cf2",
+    "validation": "0c4bc601229dbbdd508a670808ae084e6a16badb6e8aed54a01c40f0398b4a12",
+    "test": "70ec6f7e6d79920d0c135a2c165b165f75a8140afbbc370a2cb48e2eb8c635f6"
+  },
+  "python": "3.14.0",
+  "torch": "2.13.0+cu132",
+  "transformers_model": "roberta-base",
+  "run_final_test": false,
+  "dependencies": {
+    "torch": "2.13.0+cu132",
+    "transformers": "5.5.0",
+    "pandas": "3.0.6",
+    "numpy": "2.5.2",
+    "scikit-learn": "1.8.0",
+    "shap": "0.53.0",
+    "lime": "0.2.0.1"
+  },
+  "chunk_overlap_tokens": 64,
+  "chunk_pooling": "max_severity",
+  "training_objective": "chunk-level weighted cross-entropy, each window inherits song label",
+  "song_weighting": "each song's chunk weights sum to 1",
+  "evaluation_unit": "song-level via max-severity pooling",
+  "pipeline_version": "v26",
+  "class_weights": {
+    "Safe": 0.704553484916687,
+    "Mild": 0.9925410151481628,
+    "Explicit": 1.7447552680969238
+  },
+  "training_class_counts": {
+    "Safe": 2833,
+    "Mild": 2011,
+    "Explicit": 1144
+  },
+  "padding_pretrain": {
+    "phase": "pretrain",
+    "reference_tolerance": 0.0001,
+    "hard_fail": false,
+    "max_absolute_difference": 3.8743019104003906e-07,
+    "any_argmax_flip": false,
+    "cases": [
+      {
+        "case": "short",
+        "validation_row_position": 1013,
+        "song_window_count": 1,
+        "selected_window": 1,
+        "selected_window_tokens": 23,
+        "fixed_probabilities": [
+          0.3452019691467285,
+          0.3150782585144043,
+          0.3397197723388672
+        ],
+        "dynamic_probabilities": [
+          0.3452020287513733,
+          0.31507816910743713,
+          0.3397197723388672
+        ],
+        "mixed_probabilities": [
+          0.3452019691467285,
+          0.3150784969329834,
+          0.33971959352493286
+        ],
+        "max_absolute_difference": 2.384185791015625e-07,
+        "argmax_flip": false,
+        "exceeds_reference_tolerance": false
+      },
+      {
+        "case": "median",
+        "validation_row_position": 2602,
+        "song_window_count": 1,
+        "selected_window": 1,
+        "selected_window_tokens": 342,
+        "fixed_probabilities": [
+          0.34497886896133423,
+          0.31514203548431396,
+          0.3398791253566742
+        ],
+        "dynamic_probabilities": [
+          0.34497886896133423,
+          0.3151420056819916,
+          0.3398791253566742
+        ],
+        "mixed_probabilities": [
+          0.344978928565979,
+          0.3151422441005707,
+          0.3398788571357727
+        ],
+        "max_absolute_difference": 2.682209014892578e-07,
+        "argmax_flip": false,
+        "exceeds_reference_tolerance": false
+      },
+      {
+        "case": "long",
+        "validation_row_position": 2534,
+        "song_window_count": 30,
+        "selected_window": 30,
+        "selected_window_tokens": 510,
+        "fixed_probabilities": [
+          0.34555181860923767,
+          0.31485164165496826,
+          0.33959656953811646
+        ],
+        "dynamic_probabilities": [
+          0.34555181860923767,
+          0.31485164165496826,
+          0.33959656953811646
+        ],
+        "mixed_probabilities": [
+          0.34555181860923767,
+          0.31485193967819214,
+          0.3395961821079254
+        ],
+        "max_absolute_difference": 3.8743019104003906e-07,
+        "argmax_flip": false,
+        "exceeds_reference_tolerance": false
+      }
+    ],
+    "reference_pass": true
+  },
+  "padding_posttrain": {
+    "phase": "posttrain",
+    "reference_tolerance": 0.0001,
+    "hard_fail": false,
+    "max_absolute_difference": 1.4603137969970703e-05,
+    "any_argmax_flip": false,
+    "cases": [
+      {
+        "case": "short",
+        "validation_row_position": 1013,
+        "song_window_count": 1,
+        "selected_window": 1,
+        "selected_window_tokens": 23,
+        "fixed_probabilities": [
+          0.2762985825538635,
+          0.661104679107666,
+          0.06259672343730927
+        ],
+        "dynamic_probabilities": [
+          0.27630650997161865,
+          0.661097526550293,
+          0.06259603053331375
+        ],
+        "mixed_probabilities": [
+          0.2762935757637024,
+          0.6611098051071167,
+          0.06259656697511673
+        ],
+        "max_absolute_difference": 7.927417755126953e-06,
+        "argmax_flip": false,
+        "exceeds_reference_tolerance": false
+      },
+      {
+        "case": "median",
+        "validation_row_position": 2602,
+        "song_window_count": 1,
+        "selected_window": 1,
+        "selected_window_tokens": 342,
+        "fixed_probabilities": [
+          0.31817010045051575,
+          0.6335332989692688,
+          0.04829658195376396
+        ],
+        "dynamic_probabilities": [
+          0.3181714713573456,
+          0.6335323452949524,
+          0.0482962504029274
+        ],
+        "mixed_probabilities": [
+          0.3181847035884857,
+          0.6335242390632629,
+          0.04829106852412224
+        ],
+        "max_absolute_difference": 1.4603137969970703e-05,
+        "argmax_flip": false,
+        "exceeds_reference_tolerance": false
+      },
+      {
+        "case": "long",
+        "validation_row_position": 2534,
+        "song_window_count": 30,
+        "selected_window": 30,
+        "selected_window_tokens": 510,
+        "fixed_probabilities": [
+          0.2524006962776184,
+          0.6886521577835083,
+          0.05894716829061508
+        ],
+        "dynamic_probabilities": [
+          0.2524006962776184,
+          0.6886521577835083,
+          0.05894716829061508
+        ],
+        "mixed_probabilities": [
+          0.2523939907550812,
+          0.6886598467826843,
+          0.05894622579216957
+        ],
+        "max_absolute_difference": 7.68899917602539e-06,
+        "argmax_flip": false,
+        "exceeds_reference_tolerance": false
+      }
+    ],
+    "reference_pass": true
+  },
+  "optimizer_steps_planned": 10860,
+  "warmup_steps_planned": 1086,
+  "optimizer_steps_completed": 5430,
+  "checkpoint_sha256": "02bdc6914029b99eea2ec16c448ccd201d2d99232b29aeed563111d2f376b405",
+  "validation_macro_f1": 0.7036946903182169,
+  "best_epoch": 3,
+  "best_validation_macro_f1": 0.7036946903182169
+}

@@ -1,0 +1,14 @@
+{
+  "training": {
+    "path": "C:\\Users\\Sephie\\OneDrive\\Desktop\\Thesis Perturb Permute\\Thesis-Project\\data\\Training_Cleaned.csv",
+    "sha256": "3ddf257eca804e3ee848f1314acecebade33460ca1b5c478810a52b4c8602cf2"
+  },
+  "validation": {
+    "path": "C:\\Users\\Sephie\\OneDrive\\Desktop\\Thesis Perturb Permute\\Thesis-Project\\data\\Validation_Cleaned.csv",
+    "sha256": "0c4bc601229dbbdd508a670808ae084e6a16badb6e8aed54a01c40f0398b4a12"
+  },
+  "test": {
+    "path": "C:\\Users\\Sephie\\OneDrive\\Desktop\\Thesis Perturb Permute\\Thesis-Project\\data\\Testing_Cleaned.csv",
+    "sha256": "70ec6f7e6d79920d0c135a2c165b165f75a8140afbbc370a2cb48e2eb8c635f6"
+  }
+}

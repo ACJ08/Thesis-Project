@@ -245,8 +245,12 @@ class InsufficientFeatures(ValueError):
     pass
 
 
-def main():
-    request, result = map(Path, sys.argv[1:])
+def run_job(request, result, project_dir):
+    clf.PROJECT_DIR = project_dir
+    clf.FROZEN_RUN_DIRS = {
+        name: project_dir / "experiments" / Path(directory).name
+        for name, directory in clf.FROZEN_RUN_DIRS.items()
+    }
     job = json.loads(request.read_text(encoding="utf-8"))
     print(f"v26 device: {clf.DEVICE}", flush=True)
     if job["action"] == "train":
@@ -259,4 +263,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    run_job(*map(Path, sys.argv[1:]), clf.PROJECT_DIR)

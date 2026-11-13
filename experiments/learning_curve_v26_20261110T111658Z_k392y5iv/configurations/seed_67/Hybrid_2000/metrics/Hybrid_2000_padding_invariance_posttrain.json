@@ -1,0 +1,85 @@
+{
+  "phase": "posttrain",
+  "reference_tolerance": 0.0001,
+  "hard_fail": false,
+  "max_absolute_difference": 2.5033950805664062e-06,
+  "any_argmax_flip": false,
+  "cases": [
+    {
+      "case": "short",
+      "validation_row_position": 1013,
+      "song_window_count": 1,
+      "selected_window": 1,
+      "selected_window_tokens": 23,
+      "fixed_probabilities": [
+        0.8394372463226318,
+        0.1342877596616745,
+        0.026275090873241425
+      ],
+      "dynamic_probabilities": [
+        0.8394373059272766,
+        0.1342875212430954,
+        0.026275167241692543
+      ],
+      "mixed_probabilities": [
+        0.8394355773925781,
+        0.13428932428359985,
+        0.026275118812918663
+      ],
+      "max_absolute_difference": 1.6689300537109375e-06,
+      "argmax_flip": false,
+      "exceeds_reference_tolerance": false
+    },
+    {
+      "case": "median",
+      "validation_row_position": 2602,
+      "song_window_count": 1,
+      "selected_window": 1,
+      "selected_window_tokens": 342,
+      "fixed_probabilities": [
+        0.06953205168247223,
+        0.8488903641700745,
+        0.08157756179571152
+      ],
+      "dynamic_probabilities": [
+        0.06953207403421402,
+        0.8488902449607849,
+        0.0815776139497757
+      ],
+      "mixed_probabilities": [
+        0.06953185796737671,
+        0.8488903641700745,
+        0.08157779276371002
+      ],
+      "max_absolute_difference": 2.3096799850463867e-07,
+      "argmax_flip": false,
+      "exceeds_reference_tolerance": false
+    },
+    {
+      "case": "long",
+      "validation_row_position": 2534,
+      "song_window_count": 30,
+      "selected_window": 30,
+      "selected_window_tokens": 510,
+      "fixed_probabilities": [
+        0.11997345089912415,
+        0.8153307437896729,
+        0.0646957978606224
+      ],
+      "dynamic_probabilities": [
+        0.11997345089912415,
+        0.8153307437896729,
+        0.0646957978606224
+      ],
+      "mixed_probabilities": [
+        0.11997200548648834,
+        0.8153332471847534,
+        0.06469480693340302
+      ],
+      "max_absolute_difference": 2.5033950805664062e-06,
+      "argmax_flip": false,
+      "exceeds_reference_tolerance": false
+    }
+  ],
+  "reference_pass": true
+}

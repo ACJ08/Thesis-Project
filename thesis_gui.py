@@ -1,10 +1,14 @@
 """Launch with python thesis_gui.py."""
 import json
+import multiprocessing
 import queue
 import subprocess
 import sys
 import tempfile
 import threading
+import time
+import traceback
+from contextlib import redirect_stderr, redirect_stdout
 import tkinter as tk
 from pathlib import Path
 from tkinter import filedialog, messagebox, ttk
@@ -13,7 +17,20 @@ from ttkbootstrap import Style
 from ttkbootstrap.style import ThemeDefinition
 
 
-ROOT = Path(__file__).resolve().parent
+FROZEN = getattr(sys, "frozen", False)
+
+
+def project_root():
+    if not FROZEN:
+        return Path(__file__).resolve().parent
+    app_folder = Path(sys.executable).resolve().parent
+    for folder in (app_folder, *app_folder.parents):
+        if (folder / "data").is_dir() or (folder / "experiments").is_dir():
+            return folder
+    return app_folder
+
+
+ROOT = project_root()
 BACKGROUND = "#151D2B"
 PANEL = "#202C3D"
 INPUT = "#111A29"
@@ -289,12 +306,12 @@ class Application:
             self.temp = tempfile.TemporaryDirectory(prefix="thesis_gui_")
             request = Path(self.temp.name) / "request.json"
             result = request.with_name("result.json")
+            log_path = request.with_name("worker.log")
             request.write_text(json.dumps(job), encoding="utf-8")
+            launcher = [sys.executable] if FROZEN else [sys.executable, "-B", str(Path(__file__).resolve())]
             self.process = subprocess.Popen(
-                [sys.executable, "-B", "-X", "utf8", "-u", str(ROOT / "thesis_gui_worker.py"),
-                 str(request), str(result)],
-                cwd=ROOT, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
-                encoding="utf-8", errors="replace", creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
+                [*launcher, "--worker", str(request), str(result), str(log_path)],
+                cwd=ROOT, creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
             )
         except OSError as error:
             if hasattr(self, "temp"):
@@ -312,10 +329,22 @@ class Application:
             button.configure(state="disabled")
 
         def collect(process):
-            with process.stdout:
-                for line in process.stdout:
-                    self.events.put(("log", line))
-            code = process.wait()
+            try:
+                while not log_path.is_file() and process.poll() is None:
+                    time.sleep(0.08)
+                if log_path.is_file():
+                    with log_path.open(encoding="utf-8", errors="replace") as stream:
+                        while True:
+                            code = process.poll()
+                            for line in stream:
+                                self.events.put(("log", line))
+                            if code is not None:
+                                break
+                            time.sleep(0.08)
+                code = process.wait()
+            except OSError as error:
+                self.events.put(("log", f"{error}\n"))
+                code = process.wait()
             payload = result.read_text(encoding="utf-8") if code == 0 and result.is_file() else None
             self.events.put(("done", payload))
 
@@ -439,7 +468,24 @@ class Application:
         self.root.destroy()
 
 
+def run_worker(request, result, log_path):
+    # PyInstaller's windowed executable has no stdout/stderr streams.
+    with open(log_path, "w", encoding="utf-8", buffering=1) as log:
+        with redirect_stdout(log), redirect_stderr(log):
+            try:
+                from thesis_gui_worker import run_job
+
+                run_job(Path(request), Path(result), ROOT)
+            except Exception:
+                traceback.print_exc()
+                return 1
+    return 0
+
+
 if __name__ == "__main__":
+    multiprocessing.freeze_support()
+    if sys.argv[1:2] == ["--worker"]:
+        sys.exit(run_worker(*sys.argv[2:]))
     window = tk.Tk()
     Application(window)
     window.mainloop()

@@ -1,0 +1,66 @@
+{
+  "model": "bert_cnn_lstm",
+  "seed": 67,
+  "condition": "A_to_B",
+  "checkpoint_sha256": "587bfc142d74710eb7452bb0f5219b5ee8892368d78eb452da6b31656eb65868",
+  "metrics": {
+    "accuracy": 0.7190669371196755,
+    "macro_f1": 0.7038758260088535,
+    "weighted_f1": 0.7202530224906567,
+    "per_class": {
+      "Safe": {
+        "precision": 0.8236607142857143,
+        "recall": 0.8127753303964758,
+        "f1": 0.8181818181818182,
+        "support": 454,
+        "error_rate": 0.18722466960352424
+      },
+      "Mild": {
+        "precision": 0.582089552238806,
+        "recall": 0.6112852664576802,
+        "f1": 0.5963302752293578,
+        "support": 319,
+        "error_rate": 0.3887147335423198
+      },
+      "Explicit": {
+        "precision": 0.7142857142857143,
+        "recall": 0.6807511737089202,
+        "f1": 0.6971153846153846,
+        "support": 213,
+        "error_rate": 0.31924882629107976
+      }
+    },
+    "confusion_matrix": [
+      [
+        369,
+        82,
+        3
+      ],
+      [
+        69,
+        195,
+        55
+      ],
+      [
+        10,
+        58,
+        145
+      ]
+    ],
+    "directional_errors": {
+      "Safe_to_Mild": 82,
+      "Safe_to_Explicit": 3,
+      "Mild_to_Safe": 69,
+      "Mild_to_Explicit": 55,
+      "Explicit_to_Safe": 10,
+      "Explicit_to_Mild": 58
+    },
+    "macro_precision": 0.7066786602700782,
+    "macro_recall": 0.7016039235210254,
+    "confusion_matrix_label_order": [
+      "Safe",
+      "Mild",
+      "Explicit"
+    ]
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "status": "interrupted",
+  "checkpoint": "C:\\Users\\Sephie\\OneDrive\\Desktop\\Thesis\\actual project\\Thesis-Project\\experiments\\hybrid_v26_20261107T000459Z\\best_model.pt",
+  "validation": "C:\\Users\\Sephie\\OneDrive\\Desktop\\Thesis Perturb Permute\\Thesis-Project\\data\\Validation_Cleaned.csv",
+  "seed": 67,
+  "scope": "fixed local evidence window; not full-song confidence",
+  "shap": "permutation SHAP; positional word presence; all-zero empty-text background",
+  "ranking": "descending signed attribution for original local predicted class",
+  "statistics": "one-sided paired t tests; 95% song bootstrap intervals; Holm across all 12 tests",
+  "options": {
+    "classifier": "C:\\Users\\Sephie\\OneDrive\\Desktop\\Thesis Perturb Permute\\Thesis-Project\\lyric_classifier_v26_all_models.py",
+    "checkpoint": null,
+    "validation": "C:\\Users\\Sephie\\OneDrive\\Desktop\\Thesis Perturb Permute\\Thesis-Project\\data\\Validation_Cleaned.csv",
+    "output": null,
+    "samples": 30,
+    "seed": 67,
+    "lime_samples": 1000,
+    "shap_permutations": 5,
+    "random_repeats": 20,
+    "bootstrap_resamples": 10000,
+    "batch_size": 8
+  },
+  "reason": "LIME default UNKWORDZ replacement discovered; superseded by deletion-aligned run reusing verified SHAP only"
+}

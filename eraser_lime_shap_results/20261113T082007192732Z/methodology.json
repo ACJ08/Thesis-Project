@@ -1,0 +1,29 @@
+{
+  "status": "complete",
+  "checkpoint": "C:\\Users\\Sephie\\OneDrive\\Desktop\\Thesis\\actual project\\Thesis-Project\\experiments\\hybrid_v26_20261107T000459Z\\best_model.pt",
+  "validation": "C:\\Users\\Sephie\\OneDrive\\Desktop\\Thesis Perturb Permute\\Thesis-Project\\data\\Validation_Cleaned.csv",
+  "seed": 67,
+  "scope": "fixed local evidence window; not full-song confidence",
+  "shap": "permutation SHAP; positional word presence; all-zero empty-text background",
+  "lime": "positional LIME with empty mask string; actual word deletion",
+  "ranking": "descending signed attribution for original local predicted class",
+  "statistics": "one-sided paired t tests; 95% song bootstrap intervals; Holm across all 12 tests",
+  "options": {
+    "classifier": "C:\\Users\\Sephie\\OneDrive\\Desktop\\Thesis Perturb Permute\\Thesis-Project\\lyric_classifier_v26_all_models.py",
+    "checkpoint": null,
+    "validation": "C:\\Users\\Sephie\\OneDrive\\Desktop\\Thesis Perturb Permute\\Thesis-Project\\data\\Validation_Cleaned.csv",
+    "output": null,
+    "samples": 30,
+    "seed": 67,
+    "lime_samples": 1000,
+    "shap_permutations": 5,
+    "random_repeats": 20,
+    "bootstrap_resamples": 10000,
+    "batch_size": 8,
+    "reuse_shap": "eraser_lime_shap_results\\20261113T075532392556Z"
+  },
+  "songs_evaluated": 30,
+  "overflow_unique_perturbations_truncated": 0,
+  "reused_shap_songs": 23,
+  "overflow_scope": "newly scored texts only; reused SHAP attribution provenance is the source run"
+}

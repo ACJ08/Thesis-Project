@@ -1,0 +1,60 @@
+{
+  "accuracy": 0.6856742697078831,
+  "macro_f1": 0.6696672844045418,
+  "weighted_f1": 0.6880136840512528,
+  "per_class": {
+    "Safe": {
+      "precision": 0.8104803493449781,
+      "recall": 0.7694859038142621,
+      "f1": 0.7894512973202893,
+      "support": 2412,
+      "error_rate": 0.23051409618573793
+    },
+    "Mild": {
+      "precision": 0.5370694687682428,
+      "recall": 0.5609756097560976,
+      "f1": 0.5487623024157471,
+      "support": 1640,
+      "error_rate": 0.4390243902439024
+    },
+    "Explicit": {
+      "precision": 0.6542713567839196,
+      "recall": 0.6881606765327696,
+      "f1": 0.6707882534775889,
+      "support": 946,
+      "error_rate": 0.3118393234672304
+    }
+  },
+  "confusion_matrix": [
+    [
+      1856,
+      513,
+      43
+    ],
+    [
+      419,
+      920,
+      301
+    ],
+    [
+      15,
+      280,
+      651
+    ]
+  ],
+  "directional_errors": {
+    "Safe_to_Mild": 513,
+    "Safe_to_Explicit": 43,
+    "Mild_to_Safe": 419,
+    "Mild_to_Explicit": 301,
+    "Explicit_to_Safe": 15,
+    "Explicit_to_Mild": 280
+  },
+  "macro_precision": 0.6672737249657135,
+  "macro_recall": 0.6728740633677098,
+  "confusion_matrix_label_order": [
+    "Safe",
+    "Mild",
+    "Explicit"
+  ]
+}

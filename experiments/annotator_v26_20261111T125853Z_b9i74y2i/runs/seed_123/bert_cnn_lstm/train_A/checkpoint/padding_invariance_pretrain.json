@@ -1,0 +1,85 @@
+{
+  "phase": "pretrain",
+  "reference_tolerance": 0.0001,
+  "hard_fail": false,
+  "max_absolute_difference": 2.384185791015625e-07,
+  "any_argmax_flip": false,
+  "cases": [
+    {
+      "case": "short",
+      "validation_row_position": 133,
+      "song_window_count": 1,
+      "selected_window": 1,
+      "selected_window_tokens": 42,
+      "fixed_probabilities": [
+        0.3224104940891266,
+        0.3437347710132599,
+        0.3338547646999359
+      ],
+      "dynamic_probabilities": [
+        0.322410523891449,
+        0.3437347114086151,
+        0.3338547348976135
+      ],
+      "mixed_probabilities": [
+        0.3224107325077057,
+        0.34373459219932556,
+        0.33385467529296875
+      ],
+      "max_absolute_difference": 2.384185791015625e-07,
+      "argmax_flip": false,
+      "exceeds_reference_tolerance": false
+    },
+    {
+      "case": "median",
+      "validation_row_position": 418,
+      "song_window_count": 1,
+      "selected_window": 1,
+      "selected_window_tokens": 331,
+      "fixed_probabilities": [
+        0.3222968876361847,
+        0.3440197706222534,
+        0.33368340134620667
+      ],
+      "dynamic_probabilities": [
+        0.3222968876361847,
+        0.3440197706222534,
+        0.3336833715438843
+      ],
+      "mixed_probabilities": [
+        0.32229697704315186,
+        0.34401971101760864,
+        0.3336833119392395
+      ],
+      "max_absolute_difference": 8.940696716308594e-08,
+      "argmax_flip": false,
+      "exceeds_reference_tolerance": false
+    },
+    {
+      "case": "long",
+      "validation_row_position": 84,
+      "song_window_count": 14,
+      "selected_window": 14,
+      "selected_window_tokens": 405,
+      "fixed_probabilities": [
+        0.32285234332084656,
+        0.34343430399894714,
+        0.3337133824825287
+      ],
+      "dynamic_probabilities": [
+        0.32285234332084656,
+        0.34343430399894714,
+        0.3337133824825287
+      ],
+      "mixed_probabilities": [
+        0.3228524923324585,
+        0.34343421459198,
+        0.3337132930755615
+      ],
+      "max_absolute_difference": 1.4901161193847656e-07,
+      "argmax_flip": false,
+      "exceeds_reference_tolerance": false
+    }
+  ],
+  "reference_pass": true
+}

@@ -1,0 +1,19 @@
+{
+  "method": "LIME-guided local evidence-window deletion",
+  "scope": "original v26 evidence window, NOT entire song",
+  "predicted_class": "fixed original predicted evidence-window class",
+  "attribution": "LIME positional whitespace-word weights, positive-first",
+  "erasure": "delete ceil(k% of whitespace-delimited words), preserve order",
+  "original_prediction": "v26 full-song max-severity selection, then local window scoring",
+  "probability": "softmax of re-tokenized local evidence text; fixed 510-token context",
+  "local_window_trim": "trim trailing whitespace words to <= capacity-24 BPE tokens",
+  "overflow_perturbations_truncated": 6166,
+  "baseline": "random deletion at equal count, averaged per song",
+  "checkpoint": "C:\\Users\\Sephie\\OneDrive\\Desktop\\Thesis\\actual project\\Thesis-Project\\experiments\\hybrid_v26_20261107T000459Z\\best_model.pt",
+  "validation": "C:\\Users\\Sephie\\OneDrive\\Desktop\\Thesis\\actual project\\Thesis-Project\\data\\Validation_Cleaned.csv",
+  "seed": 67,
+  "samples_requested": 30,
+  "songs_evaluated": 30,
+  "lime_samples": 300,
+  "random_repeats": 3
+}

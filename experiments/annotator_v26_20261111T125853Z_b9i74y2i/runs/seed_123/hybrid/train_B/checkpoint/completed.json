@@ -1,0 +1,13 @@
+{
+  "artifacts": {
+    "best_model.pt": "c16b0fe377495ec008c8e3b8402d1347f7831286425a5e2408d02a93c2cb0c1a",
+    "epoch_history.csv": "555c54d386ee2ed2f5d7ea0680223e17738bb5fe8cdc9371a8c241b0d407c12b",
+    "manifest.json": "02bedf3f33da98a3197a30d327728a6ebfc34eaeebbbc2727a2b89e965840d62",
+    "padding_invariance_posttrain.json": "0c04680d64ed76f3547ba08546ab2a801c98d4fc36b5a1653e24706ed88ea9c0",
+    "padding_invariance_pretrain.json": "1cf0598c90fea05026b5f8f740fd12fbe96f99e05c4dfe64bc270a2ddf1df092",
+    "training_metadata.json": "6980f0898faab73b36e3df096e033edcfd1ac571f11d335adc5d54b49ea15da5",
+    "training_provenance.json": "0d5fbf18a645b743abb9e807b3f6620236e37b3b5c5024bb27c0dee6eff6b4ed",
+    "validation_metrics.json": "b96169b439de9bc3c0cfbfdfdfe11f46ca88a717045e1d6337e05be66a5ab0d6",
+    "validation_predictions.csv": "66f312a9a6d52b9e752fc3d3d02439ba1001a208d52276bb2022af3a1f1f1302"
+  }
+}

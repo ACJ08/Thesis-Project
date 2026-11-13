@@ -1,0 +1,172 @@
+[
+  {
+    "first": {
+      "split": "training",
+      "source_row_index": 1055,
+      "title": "UNCHAINED MELODY",
+      "artist": "Smith & Myers"
+    },
+    "second": {
+      "split": "validation",
+      "source_row_index": 4687,
+      "title": "Unchained Melody",
+      "artist": "Sam Cooke"
+    },
+    "reason": "near_duplicate",
+    "containment": 0.9473684210526315,
+    "jaccard": 0.8888888888888888
+  },
+  {
+    "first": {
+      "split": "training",
+      "source_row_index": 2335,
+      "title": "Bitch",
+      "artist": "Meredith Brooks"
+    },
+    "second": {
+      "split": "validation",
+      "source_row_index": 3649,
+      "title": "Bitch Untied",
+      "artist": "Meredith Brooks"
+    },
+    "reason": "near_duplicate",
+    "containment": 0.948,
+    "jaccard": 0.8943396226415095
+  },
+  {
+    "first": {
+      "split": "training",
+      "source_row_index": 3120,
+      "title": "Come Along",
+      "artist": "Cosmo Sheldrake"
+    },
+    "second": {
+      "split": "validation",
+      "source_row_index": 4191,
+      "title": "Come Along",
+      "artist": "Pentatonix"
+    },
+    "reason": "near_duplicate",
+    "containment": 0.9839357429718876,
+    "jaccard": 0.914179104477612
+  },
+  {
+    "first": {
+      "split": "training",
+      "source_row_index": 3822,
+      "title": "Tick-Tock Dora Version",
+      "artist": "Albina"
+    },
+    "second": {
+      "split": "validation",
+      "source_row_index": 1482,
+      "title": "Tick-Tock",
+      "artist": "Albina"
+    },
+    "reason": "near_duplicate",
+    "containment": 1.0,
+    "jaccard": 0.9045454545454545
+  },
+  {
+    "first": {
+      "split": "training",
+      "source_row_index": 4635,
+      "title": "7 Nation Army",
+      "artist": "Pop Music Workshop"
+    },
+    "second": {
+      "split": "validation",
+      "source_row_index": 3248,
+      "title": "Seven Nation Army",
+      "artist": "Anderson .Paak,Smokey Robinson"
+    },
+    "reason": "near_duplicate",
+    "containment": 0.9427083333333334,
+    "jaccard": 0.8916256157635468
+  },
+  {
+    "first": {
+      "split": "training",
+      "source_row_index": 1675,
+      "title": "Six Degrees of Inner Turbulence",
+      "artist": "Dream Theater"
+    },
+    "second": {
+      "split": "test",
+      "source_row_index": 922,
+      "title": "Losing Time / Grand Finale",
+      "artist": "Dream Theater"
+    },
+    "reason": "near_duplicate",
+    "containment": 0.9867549668874173,
+    "jaccard": 0.13644688644688643
+  },
+  {
+    "first": {
+      "split": "training",
+      "source_row_index": 3038,
+      "title": "Old Town Road",
+      "artist": "Walk off the Earth"
+    },
+    "second": {
+      "split": "test",
+      "source_row_index": 392,
+      "title": "Old Town Road",
+      "artist": "Our Last Night"
+    },
+    "reason": "near_duplicate",
+    "containment": 0.9710144927536232,
+    "jaccard": 0.9436619718309859
+  },
+  {
+    "first": {
+      "split": "training",
+      "source_row_index": 3986,
+      "title": "Sail Feed Me Remix",
+      "artist": "AWOLNATION,Feed Me"
+    },
+    "second": {
+      "split": "test",
+      "source_row_index": 2189,
+      "title": "Sail Unlimited Gravity Remix",
+      "artist": "AWOLNATION,Unlimited Gravity"
+    },
+    "reason": "near_duplicate",
+    "containment": 1.0,
+    "jaccard": 0.9565217391304348
+  },
+  {
+    "first": {
+      "split": "training",
+      "source_row_index": 4613,
+      "title": "Danger Zone",
+      "artist": "Big L"
+    },
+    "second": {
+      "split": "test",
+      "source_row_index": 3658,
+      "title": "Zone of Danger",
+      "artist": "Razakel,Big Lokote"
+    },
+    "reason": "near_duplicate",
+    "containment": 0.9801587301587301,
+    "jaccard": 0.9165120593692022
+  },
+  {
+    "first": {
+      "split": "validation",
+      "source_row_index": 4780,
+      "title": "Moment For Life - Freestyle",
+      "artist": "Meek Mill"
+    },
+    "second": {
+      "split": "test",
+      "source_row_index": 3580,
+      "title": "Moment 4 Life Freestyle",
+      "artist": "Meek Mill"
+    },
+    "reason": "near_duplicate",
+    "containment": 0.9812925170068028,
+    "jaccard": 0.9537190082644628
+  }
+]

@@ -1,0 +1,150 @@
+{
+  "model": "BERT_CNN_LSTM",
+  "size": "5000",
+  "seed": 67,
+  "training_songs": 5000,
+  "training_class_counts": {
+    "Safe": 2366,
+    "Mild": 1679,
+    "Explicit": 955
+  },
+  "class_weights": {
+    "Safe": 0.7044237813468582,
+    "Mild": 0.9926543577526306,
+    "Explicit": 1.7452006980802792
+  },
+  "validation_class_counts": {
+    "Safe": 2193,
+    "Mild": 1594,
+    "Explicit": 1213
+  },
+  "test_class_counts": {
+    "Safe": 2412,
+    "Mild": 1640,
+    "Explicit": 946
+  },
+  "training_duration_seconds": 2218.9247031000014,
+  "best_epoch": 1,
+  "best_validation_loss": 0.7804521917503857,
+  "validation": {
+    "accuracy": 0.7366,
+    "macro_f1": 0.7001331000551329,
+    "weighted_f1": 0.7166775092730613,
+    "per_class": {
+      "Safe": {
+        "precision": 0.783415372964786,
+        "recall": 0.9434564523483812,
+        "f1": 0.8560198593297477,
+        "support": 2193,
+        "error_rate": 0.05654354765161884
+      },
+      "Mild": {
+        "precision": 0.7034632034632035,
+        "recall": 0.4077791718946048,
+        "f1": 0.5162827640984908,
+        "support": 1594,
+        "error_rate": 0.5922208281053952
+      },
+      "Explicit": {
+        "precision": 0.6717770034843206,
+        "recall": 0.7947238252267106,
+        "f1": 0.7280966767371602,
+        "support": 1213,
+        "error_rate": 0.2052761747732894
+      }
+    },
+    "confusion_matrix": [
+      [
+        2069,
+        103,
+        21
+      ],
+      [
+        494,
+        650,
+        450
+      ],
+      [
+        78,
+        171,
+        964
+      ]
+    ],
+    "directional_errors": {
+      "Safe_to_Mild": 103,
+      "Safe_to_Explicit": 21,
+      "Mild_to_Safe": 494,
+      "Mild_to_Explicit": 450,
+      "Explicit_to_Safe": 78,
+      "Explicit_to_Mild": 171
+    },
+    "macro_precision": 0.7195518599707701,
+    "macro_recall": 0.7153198164898988,
+    "confusion_matrix_label_order": [
+      "Safe",
+      "Mild",
+      "Explicit"
+    ]
+  },
+  "test": {
+    "accuracy": 0.7334933973589436,
+    "macro_f1": 0.6901290472252852,
+    "weighted_f1": 0.7178712282675774,
+    "per_class": {
+      "Safe": {
+        "precision": 0.833969465648855,
+        "recall": 0.9058872305140961,
+        "f1": 0.8684419713831478,
+        "support": 2412,
+        "error_rate": 0.09411276948590386
+      },
+      "Mild": {
+        "precision": 0.6936656282450675,
+        "recall": 0.4073170731707317,
+        "f1": 0.5132539377641183,
+        "support": 1640,
+        "error_rate": 0.5926829268292684
+      },
+      "Explicit": {
+        "precision": 0.5745583038869257,
+        "recall": 0.8594080338266384,
+        "f1": 0.6886912325285895,
+        "support": 946,
+        "error_rate": 0.14059196617336156
+      }
+    },
+    "confusion_matrix": [
+      [
+        2185,
+        181,
+        46
+      ],
+      [
+        416,
+        668,
+        556
+      ],
+      [
+        19,
+        114,
+        813
+      ]
+    ],
+    "directional_errors": {
+      "Safe_to_Mild": 181,
+      "Safe_to_Explicit": 46,
+      "Mild_to_Safe": 416,
+      "Mild_to_Explicit": 556,
+      "Explicit_to_Safe": 19,
+      "Explicit_to_Mild": 114
+    },
+    "macro_precision": 0.700731132593616,
+    "macro_recall": 0.7242041125038221,
+    "confusion_matrix_label_order": [
+      "Safe",
+      "Mild",
+      "Explicit"
+    ]
+  },
+  "checkpoint": "checkpoints/BERT_CNN_LSTM_5000_best_model.pt"
+}

@@ -1,0 +1,7 @@
+method,erasure_percent,songs_with_positive_drop,songs_beating_random
+LIME,5,29,28
+LIME,10,30,29
+LIME,20,30,30
+SHAP,5,30,26
+SHAP,10,30,30
+SHAP,20,30,30

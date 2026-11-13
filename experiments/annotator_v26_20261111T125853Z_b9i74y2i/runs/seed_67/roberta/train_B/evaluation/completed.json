@@ -1,0 +1,8 @@
+{
+  "artifacts": {
+    "B_to_A_metrics.json": "c85b7b1120ce2d24f7310e9b6ac513f79e236391b82d418f0cf65aa689898c31",
+    "B_to_A_predictions.csv": "fdeaa3845ecdcea50621deddc55d6a24b078d2bdcc73ca3ebaeb953d59b34a76",
+    "B_to_B_metrics.json": "2ce684e7f83dd85fde186ca30c529262935555701be505058d44079b65e53be4",
+    "B_to_B_predictions.csv": "f40585f57423987d34f6f55bf2a12b2f9a070e37f8c006c872c2a6ef53a698c3"
+  }
+}

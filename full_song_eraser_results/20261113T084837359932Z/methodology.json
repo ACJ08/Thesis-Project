@@ -1,0 +1,37 @@
+{
+  "status": "running",
+  "config": {
+    "models": [
+      "hybrid",
+      "bert_cnn_lstm",
+      "lstm_cnn",
+      "roberta"
+    ],
+    "seed": 67,
+    "lime_samples": 1000,
+    "shap_permutations": 5,
+    "random_repeats": 20,
+    "bootstrap_resamples": 10000,
+    "validation_sha256": "0c4bc601229dbbdd508a670808ae084e6a16badb6e8aed54a01c40f0398b4a12",
+    "selection_sha256": "13de50d5c676524b7ef1557f54e51cf34844b9feb8f2f4b708bc363f932f3685",
+    "classifier_sha256": "5ae7185a786b1a0083233fff32c406ad7cca86e926899808d4a8207a2e301ee4",
+    "checkpoint_sha256": {
+      "hybrid": "d829ea4e82bbfbe089c7ca80150443f921e1ac6a7bcef0a7cac8d05738e9d6af",
+      "bert_cnn_lstm": "d810fdd29638f67bada8e8eedfeb64d604000e80f30ea14dbe9867198e4c8ec4",
+      "lstm_cnn": "e4d8ecc4ddc50557a4fa133a47ae42f44dd612d2792fc190b500c1f0c5ce625d",
+      "roberta": "55df9d2d738d17415d3ca85b2a63ccf52a07fb2149ec23a6d2ded54acb198529"
+    }
+  },
+  "scope": "entire song; all overlapping windows recomputed",
+  "class_policy": "original target fixed; max-severity pooling and evidence selection rerun after every perturbation",
+  "score": "fixed target probability in dynamically selected evidence window; pipeline score, not calibrated whole-song probability",
+  "perturbation": "positional whitespace-word deletion; preserve original separators; no truncation",
+  "shap": "permutation SHAP; binary positional word presence; empty-text background",
+  "inference": "window batching/cache; original predictions verified against repository predictor",
+  "frozen_runs": {
+    "hybrid": "C:\\Users\\Sephie\\OneDrive\\Desktop\\Thesis\\actual project\\Thesis-Project\\experiments\\hybrid_v26_20261107T000459Z",
+    "bert_cnn_lstm": "C:\\Users\\Sephie\\OneDrive\\Desktop\\Thesis\\actual project\\Thesis-Project\\experiments\\bert_cnn_lstm_v26_20261107T000459Z",
+    "lstm_cnn": "C:\\Users\\Sephie\\OneDrive\\Desktop\\Thesis\\actual project\\Thesis-Project\\experiments\\lstm_cnn_v26_20261107T000459Z",
+    "roberta": "C:\\Users\\Sephie\\OneDrive\\Desktop\\Thesis\\actual project\\Thesis-Project\\experiments\\roberta_v26_20261107T000459Z"
+  }
+}

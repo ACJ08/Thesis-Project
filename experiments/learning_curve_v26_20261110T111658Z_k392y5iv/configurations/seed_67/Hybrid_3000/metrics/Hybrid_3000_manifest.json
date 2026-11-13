@@ -1,0 +1,268 @@
+{
+  "run_id": "lc",
+  "smoke_test": false,
+  "smoke_train_target": null,
+  "smoke_val_target": null,
+  "architecture": "hybrid",
+  "max_length": 512,
+  "seed": 67,
+  "epochs_max": 10,
+  "batch_size": 2,
+  "accumulation_steps": 4,
+  "learning_rate": 2e-05,
+  "class_weighting": "inverse_frequency",
+  "exclude_needs_revision": false,
+  "preprocessing": "split overlap audit; structural lyric section headers removed from model input",
+  "input_policy": "ALL lyrics tokens via overlapping 512-token windows; NO first-window truncation",
+  "input_max_length": 512,
+  "pooling": "masked mean after unidirectional LSTM",
+  "run_padding_invariance_check": true,
+  "padding_hard_fail_after_training": false,
+  "padding_reference_tolerance": 0.0001,
+  "provenance": {
+    "raw_rows": 3000,
+    "flagged_before_filter": 0,
+    "retained_rows": 3000,
+    "exclude_needs_revision": false,
+    "needs_revision": {
+      "available": false
+    },
+    "needs_review": {
+      "available": false
+    },
+    "human_label": {
+      "available": false
+    },
+    "label_source": {
+      "available": false
+    },
+    "review_status": {
+      "available": false
+    },
+    "reviewed_by": {
+      "available": false
+    },
+    "annotator": {
+      "available": false
+    },
+    "human_verification_confirmed": false
+  },
+  "smoke_subset_provenance": null,
+  "gradient_objective": "sum (class-weighted cross-entropy * inverse song window count) / sum (class weight * inverse song window count) per effective batch",
+  "training_rows": 3000,
+  "validation_rows": 5000,
+  "test_rows": 4998,
+  "training_rows_before_review_filter": 3000,
+  "training_rows_flagged_needs_revision": 0,
+  "input_sha256": {
+    "training": "12a4cdfb2b6e6b42362e1d7c073882b615b97553846fb99b4297f32e2e76c6c5",
+    "validation": "0c4bc601229dbbdd508a670808ae084e6a16badb6e8aed54a01c40f0398b4a12",
+    "test": "70ec6f7e6d79920d0c135a2c165b165f75a8140afbbc370a2cb48e2eb8c635f6"
+  },
+  "python": "3.14.3",
+  "torch": "2.13.0+cu132",
+  "transformers_model": "roberta-base",
+  "run_final_test": false,
+  "dependencies": {
+    "torch": "2.13.0+cu132",
+    "transformers": "5.5.0",
+    "pandas": "3.0.6",
+    "numpy": "2.5.2",
+    "scikit-learn": "1.8.0",
+    "shap": "0.53.0",
+    "lime": "0.2.0.1"
+  },
+  "chunk_overlap_tokens": 64,
+  "chunk_pooling": "max_severity",
+  "training_objective": "chunk-level weighted cross-entropy, each window inherits song label",
+  "song_weighting": "each song's chunk weights sum to 1",
+  "evaluation_unit": "song-level via max-severity pooling",
+  "pipeline_version": "v26",
+  "class_weights": {
+    "Safe": 0.7047216296195984,
+    "Mild": 0.9920634627342224,
+    "Explicit": 1.745200753211975
+  },
+  "training_class_counts": {
+    "Safe": 1419,
+    "Mild": 1008,
+    "Explicit": 573
+  },
+  "padding_pretrain": {
+    "phase": "pretrain",
+    "reference_tolerance": 0.0001,
+    "hard_fail": false,
+    "max_absolute_difference": 3.8743019104003906e-07,
+    "any_argmax_flip": false,
+    "cases": [
+      {
+        "case": "short",
+        "validation_row_position": 1013,
+        "song_window_count": 1,
+        "selected_window": 1,
+        "selected_window_tokens": 23,
+        "fixed_probabilities": [
+          0.3452019691467285,
+          0.3150782585144043,
+          0.3397197723388672
+        ],
+        "dynamic_probabilities": [
+          0.3452020287513733,
+          0.31507816910743713,
+          0.3397197723388672
+        ],
+        "mixed_probabilities": [
+          0.3452019691467285,
+          0.3150784969329834,
+          0.33971959352493286
+        ],
+        "max_absolute_difference": 2.384185791015625e-07,
+        "argmax_flip": false,
+        "exceeds_reference_tolerance": false
+      },
+      {
+        "case": "median",
+        "validation_row_position": 2602,
+        "song_window_count": 1,
+        "selected_window": 1,
+        "selected_window_tokens": 342,
+        "fixed_probabilities": [
+          0.34497886896133423,
+          0.31514203548431396,
+          0.3398791253566742
+        ],
+        "dynamic_probabilities": [
+          0.34497886896133423,
+          0.3151420056819916,
+          0.3398791253566742
+        ],
+        "mixed_probabilities": [
+          0.344978928565979,
+          0.3151422441005707,
+          0.3398788571357727
+        ],
+        "max_absolute_difference": 2.682209014892578e-07,
+        "argmax_flip": false,
+        "exceeds_reference_tolerance": false
+      },
+      {
+        "case": "long",
+        "validation_row_position": 2534,
+        "song_window_count": 30,
+        "selected_window": 30,
+        "selected_window_tokens": 510,
+        "fixed_probabilities": [
+          0.34555181860923767,
+          0.31485164165496826,
+          0.33959656953811646
+        ],
+        "dynamic_probabilities": [
+          0.34555181860923767,
+          0.31485164165496826,
+          0.33959656953811646
+        ],
+        "mixed_probabilities": [
+          0.34555181860923767,
+          0.31485193967819214,
+          0.3395961821079254
+        ],
+        "max_absolute_difference": 3.8743019104003906e-07,
+        "argmax_flip": false,
+        "exceeds_reference_tolerance": false
+      }
+    ],
+    "reference_pass": true
+  },
+  "padding_posttrain": {
+    "phase": "posttrain",
+    "reference_tolerance": 0.0001,
+    "hard_fail": false,
+    "max_absolute_difference": 1.5497207641601562e-06,
+    "any_argmax_flip": false,
+    "cases": [
+      {
+        "case": "short",
+        "validation_row_position": 1013,
+        "song_window_count": 1,
+        "selected_window": 1,
+        "selected_window_tokens": 23,
+        "fixed_probabilities": [
+          0.08674304932355881,
+          0.8472354412078857,
+          0.06602150201797485
+        ],
+        "dynamic_probabilities": [
+          0.08674338459968567,
+          0.847235381603241,
+          0.06602124124765396
+        ],
+        "mixed_probabilities": [
+          0.08674149960279465,
+          0.8472365736961365,
+          0.06602190434932709
+        ],
+        "max_absolute_difference": 1.5497207641601562e-06,
+        "argmax_flip": false,
+        "exceeds_reference_tolerance": false
+      },
+      {
+        "case": "median",
+        "validation_row_position": 2602,
+        "song_window_count": 1,
+        "selected_window": 1,
+        "selected_window_tokens": 342,
+        "fixed_probabilities": [
+          0.9137214422225952,
+          0.07004839926958084,
+          0.01623006910085678
+        ],
+        "dynamic_probabilities": [
+          0.9137215614318848,
+          0.07004839181900024,
+          0.016230063512921333
+        ],
+        "mixed_probabilities": [
+          0.9137214422225952,
+          0.07004865258932114,
+          0.016229890286922455
+        ],
+        "max_absolute_difference": 2.5331974029541016e-07,
+        "argmax_flip": false,
+        "exceeds_reference_tolerance": false
+      },
+      {
+        "case": "long",
+        "validation_row_position": 2534,
+        "song_window_count": 30,
+        "selected_window": 30,
+        "selected_window_tokens": 510,
+        "fixed_probabilities": [
+          0.07533422857522964,
+          0.8603248596191406,
+          0.06434091925621033
+        ],
+        "dynamic_probabilities": [
+          0.07533422857522964,
+          0.8603248596191406,
+          0.06434091925621033
+        ],
+        "mixed_probabilities": [
+          0.07533328980207443,
+          0.860325038433075,
+          0.06434160470962524
+        ],
+        "max_absolute_difference": 9.387731552124023e-07,
+        "argmax_flip": false,
+        "exceeds_reference_tolerance": false
+      }
+    ],
+    "reference_pass": true
+  },
+  "optimizer_steps_planned": 5460,
+  "warmup_steps_planned": 546,
+  "optimizer_steps_completed": 3276,
+  "checkpoint_sha256": "5f3e95eb71b55898ed171fb3eb64ebda40058a960b7899d1c4d5b68ad87dc058",
+  "validation_macro_f1": 0.7104100301439468,
+  "best_epoch": 4,
+  "best_validation_macro_f1": 0.7104100301439468
+}

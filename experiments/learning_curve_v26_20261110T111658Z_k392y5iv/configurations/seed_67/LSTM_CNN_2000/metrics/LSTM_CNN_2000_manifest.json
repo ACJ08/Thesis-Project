@@ -1,0 +1,87 @@
+{
+  "architecture": "lstm_cnn",
+  "run_id": "lc",
+  "smoke_test": false,
+  "checkpoint_selection": "validation_macro_f1",
+  "test_evaluated_during_training": false,
+  "preprocessing": "shared clean_lyrics from v26 (NFKC and section-tag removal)",
+  "tokenizer": "train-only learned vocabulary; regex tokens",
+  "token_policy": "ALL lyrics tokens via overlapping 512-token windows; NO first-window truncation",
+  "input_policy": "ALL lyrics tokens via overlapping 512-token windows; NO first-window truncation",
+  "input_max_length": 512,
+  "seed": 67,
+  "training_rows": 2000,
+  "validation_rows": 5000,
+  "heldout_test_rows": 4998,
+  "training_class_counts": {
+    "Safe": 946,
+    "Mild": 672,
+    "Explicit": 382
+  },
+  "class_weights": {
+    "Safe": 0.704721634954193,
+    "Mild": 0.9920634920634921,
+    "Explicit": 1.7452006980802792
+  },
+  "gradient_objective": "sum (class-weighted CE * inverse song-window count) / sum (class weight * inverse song-window count) per effective batch",
+  "max_epochs": 10,
+  "batch_size": 2,
+  "gradient_accumulation_steps": 4,
+  "learning_rate": 0.001,
+  "planned_optimizer_steps": 3530,
+  "planned_warmup_steps": 353,
+  "exclude_needs_revision": false,
+  "provenance": {
+    "raw_rows": 2000,
+    "flagged_before_filter": 0,
+    "retained_rows": 2000,
+    "exclude_needs_revision": false,
+    "needs_revision": {
+      "available": false
+    },
+    "needs_review": {
+      "available": false
+    },
+    "human_label": {
+      "available": false
+    },
+    "label_source": {
+      "available": false
+    },
+    "review_status": {
+      "available": false
+    },
+    "reviewed_by": {
+      "available": false
+    },
+    "annotator": {
+      "available": false
+    },
+    "human_verification_confirmed": false
+  },
+  "input_sha256": {
+    "training": "315eaf4d803eed6d3ceee77e90e7f8277a12aa2474485b757513781aff8bd95e",
+    "validation": "0c4bc601229dbbdd508a670808ae084e6a16badb6e8aed54a01c40f0398b4a12",
+    "test": "70ec6f7e6d79920d0c135a2c165b165f75a8140afbbc370a2cb48e2eb8c635f6"
+  },
+  "python": "3.14.3",
+  "torch": "2.13.0+cu132",
+  "dependencies": {
+    "transformers": "5.5.0",
+    "pandas": "3.0.6",
+    "scikit-learn": "1.8.0"
+  },
+  "chunk_overlap_tokens": 64,
+  "chunk_pooling": "max_severity",
+  "training_objective": "chunk-level weighted cross-entropy, each window inherits song label",
+  "song_weighting": "each song's chunk weights sum to 1",
+  "evaluation_unit": "song-level via max-severity pooling",
+  "pipeline_version": "v26",
+  "vocab_size": 14372,
+  "vocab_sha256": "3aa40c4818a10e5029550482e56fdc7f1abc5f6521aeac26c23728bf7f15a52e",
+  "best_epoch": 4,
+  "best_validation_macro_f1": 0.6057976642285974,
+  "validation_macro_f1": 0.6057976642285974,
+  "optimizer_steps_completed": 2118,
+  "checkpoint_sha256": "c7e6a31e088259e7b7ea094dd592f969b106c8f1ab8e454742b50a022664e19e"
+}

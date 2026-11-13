@@ -1,0 +1,130 @@
+{
+  "policy": "One representative per connected component; A first, then source and row order.",
+  "near_duplicate_policy": {
+    "ngram_words": 5,
+    "minimum_unique_shingles": 10,
+    "jaccard_at_least": 0.85,
+    "or_containment_at_least": 0.94
+  },
+  "limitations": "Lexical detection can miss paraphrases and short near-matches.",
+  "invalid_rows": [],
+  "matches": [
+    {
+      "first_uid": "A:1627",
+      "second_uid": "A:4690",
+      "reason": "near_duplicate",
+      "containment": 0.9279279279279279,
+      "jaccard": 0.8619246861924686
+    },
+    {
+      "first_uid": "A:4122",
+      "second_uid": "A:4267",
+      "reason": "near_duplicate",
+      "containment": 0.9545454545454546,
+      "jaccard": 0.802547770700637
+    },
+    {
+      "first_uid": "B_validation:1399",
+      "second_uid": "B_validation:3576",
+      "reason": "near_duplicate",
+      "containment": 0.948948948948949,
+      "jaccard": 0.507223113964687
+    },
+    {
+      "first_uid": "B_test:2236",
+      "second_uid": "B_test:3133",
+      "reason": "near_duplicate",
+      "containment": 0.9463087248322147,
+      "jaccard": 0.7790055248618785
+    },
+    {
+      "first_uid": "B_test:2758",
+      "second_uid": "B_test:4336",
+      "reason": "near_duplicate",
+      "containment": 1.0,
+      "jaccard": 0.7910447761194029
+    }
+  ],
+  "components": [
+    {
+      "retained_uid": "A:1627",
+      "excluded_uids": [
+        "A:4690"
+      ]
+    },
+    {
+      "retained_uid": "A:4122",
+      "excluded_uids": [
+        "A:4267"
+      ]
+    },
+    {
+      "retained_uid": "B_validation:1399",
+      "excluded_uids": [
+        "B_validation:3576"
+      ]
+    },
+    {
+      "retained_uid": "B_test:2236",
+      "excluded_uids": [
+        "B_test:3133"
+      ]
+    },
+    {
+      "retained_uid": "B_test:2758",
+      "excluded_uids": [
+        "B_test:4336"
+      ]
+    }
+  ],
+  "excluded_records": [
+    {
+      "song_uid": "A:4690",
+      "source": "A",
+      "source_row_index": 4690,
+      "annotator": "A",
+      "song_name": "In Christ Alone",
+      "artist": "Keith Sweat"
+    },
+    {
+      "song_uid": "A:4267",
+      "source": "A",
+      "source_row_index": 4267,
+      "annotator": "A",
+      "song_name": "What Comes Next? 2014 Workshop",
+      "artist": "Jonathan Groff"
+    },
+    {
+      "song_uid": "B_validation:3576",
+      "source": "B_validation",
+      "source_row_index": 3576,
+      "annotator": "B",
+      "song_name": "Lovely Ladies",
+      "artist": "Lee Fields & The Expressions,Lee Fields"
+    },
+    {
+      "song_uid": "B_test:3133",
+      "source": "B_test",
+      "source_row_index": 3133,
+      "annotator": "B",
+      "song_name": "Mattress Valley Girl Remix",
+      "artist": "Leland,Allie X"
+    },
+    {
+      "song_uid": "B_test:4336",
+      "source": "B_test",
+      "source_row_index": 4336,
+      "annotator": "B",
+      "song_name": "21st Century Schizoid Man",
+      "artist": "Ozzy Osbourne"
+    }
+  ],
+  "before_counts": {
+    "B": 9998,
+    "A": 5988
+  },
+  "after_counts": {
+    "B": 9995,
+    "A": 5986
+  }
+}

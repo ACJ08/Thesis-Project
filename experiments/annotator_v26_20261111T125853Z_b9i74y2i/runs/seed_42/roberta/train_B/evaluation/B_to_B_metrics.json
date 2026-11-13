@@ -1,0 +1,66 @@
+{
+  "model": "roberta",
+  "seed": 42,
+  "condition": "B_to_B",
+  "checkpoint_sha256": "e02b5f62cdfdd71f315b6ba0294578bbffd2613f7b1892dbe2c4fa4e198877f8",
+  "metrics": {
+    "accuracy": 0.8052738336713996,
+    "macro_f1": 0.7860763429537146,
+    "weighted_f1": 0.8075920866035581,
+    "per_class": {
+      "Safe": {
+        "precision": 0.927400468384075,
+        "recall": 0.8722466960352423,
+        "f1": 0.8989784335981839,
+        "support": 454,
+        "error_rate": 0.1277533039647577
+      },
+      "Mild": {
+        "precision": 0.7195121951219512,
+        "recall": 0.7398119122257053,
+        "f1": 0.7295208655332303,
+        "support": 319,
+        "error_rate": 0.2601880877742947
+      },
+      "Explicit": {
+        "precision": 0.7012987012987013,
+        "recall": 0.7605633802816901,
+        "f1": 0.7297297297297297,
+        "support": 213,
+        "error_rate": 0.23943661971830987
+      }
+    },
+    "confusion_matrix": [
+      [
+        396,
+        45,
+        13
+      ],
+      [
+        27,
+        236,
+        56
+      ],
+      [
+        4,
+        47,
+        162
+      ]
+    ],
+    "directional_errors": {
+      "Safe_to_Mild": 45,
+      "Safe_to_Explicit": 13,
+      "Mild_to_Safe": 27,
+      "Mild_to_Explicit": 56,
+      "Explicit_to_Safe": 4,
+      "Explicit_to_Mild": 47
+    },
+    "macro_precision": 0.7827371216015758,
+    "macro_recall": 0.7908739961808792,
+    "confusion_matrix_label_order": [
+      "Safe",
+      "Mild",
+      "Explicit"
+    ]
+  }
+}

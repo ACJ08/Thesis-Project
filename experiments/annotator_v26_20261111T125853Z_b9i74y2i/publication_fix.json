@@ -1,0 +1,8 @@
+{
+  "timestamp_utc": "2026-11-11T22:36:26.286389+00:00",
+  "old_runner_sha256": "efc9637ca67596f775e131970ed49463fccc778315f8c154a1014cca824a1350",
+  "new_runner_sha256": "bc16dfeec2048985ef54ce225eb0b7fb606f3fb22f215d657afdae9b28684f0e",
+  "change": "Publication retries, verified copy fallback and recovery of completed attempts. Training, sampling and statistics unchanged.",
+  "recovered": "runs/seed_67/bert_cnn_lstm/train_B/evaluation",
+  "backup": "publish_fix_backup"
+}

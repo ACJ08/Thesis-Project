@@ -1,0 +1,269 @@
+{
+  "run_id": "annotator",
+  "smoke_test": false,
+  "smoke_train_target": null,
+  "smoke_val_target": null,
+  "architecture": "hybrid",
+  "max_length": 512,
+  "seed": 42,
+  "epochs_max": 10,
+  "batch_size": 2,
+  "accumulation_steps": 4,
+  "learning_rate": 2e-05,
+  "class_weighting": "inverse_frequency",
+  "exclude_needs_revision": false,
+  "preprocessing": "split overlap audit; structural lyric section headers removed from model input",
+  "input_policy": "ALL lyrics tokens via overlapping 512-token windows; NO first-window truncation",
+  "input_max_length": 512,
+  "pooling": "masked mean after unidirectional LSTM",
+  "run_padding_invariance_check": true,
+  "padding_hard_fail_after_training": false,
+  "padding_reference_tolerance": 0.0001,
+  "provenance": {
+    "raw_rows": 4000,
+    "flagged_before_filter": 0,
+    "retained_rows": 4000,
+    "exclude_needs_revision": false,
+    "needs_revision": {
+      "available": false
+    },
+    "needs_review": {
+      "available": false
+    },
+    "human_label": {
+      "available": false
+    },
+    "label_source": {
+      "available": false
+    },
+    "review_status": {
+      "available": false
+    },
+    "reviewed_by": {
+      "available": false
+    },
+    "annotator": {
+      "available": true,
+      "nonempty_count": 4000
+    },
+    "human_verification_confirmed": false
+  },
+  "smoke_subset_provenance": null,
+  "gradient_objective": "sum (class-weighted cross-entropy * inverse song window count) / sum (class weight * inverse song window count) per effective batch",
+  "training_rows": 4000,
+  "validation_rows": 1000,
+  "test_rows": 986,
+  "training_rows_before_review_filter": 4000,
+  "training_rows_flagged_needs_revision": 0,
+  "input_sha256": {
+    "training": "9b92358c5b11ded39165740acdd27835e76082605f744437de468cc4d355df22",
+    "validation": "1deec1cc64446baba5033412072cd982497a7e3fc17745d1b6e3b3f4c03d6fda",
+    "test": "bad3d9c9824615c3fc84df9023384e46f30a2d7e1ca40680d9941bf351d33c77"
+  },
+  "python": "3.14.0",
+  "torch": "2.13.0+cu132",
+  "transformers_model": "roberta-base",
+  "run_final_test": false,
+  "dependencies": {
+    "torch": "2.13.0+cu132",
+    "transformers": "5.5.0",
+    "pandas": "3.0.6",
+    "numpy": "2.5.2",
+    "scikit-learn": "1.8.0",
+    "shap": "0.53.0",
+    "lime": "0.2.0.1"
+  },
+  "chunk_overlap_tokens": 64,
+  "chunk_pooling": "max_severity",
+  "training_objective": "chunk-level weighted cross-entropy, each window inherits song label",
+  "song_weighting": "each song's chunk weights sum to 1",
+  "evaluation_unit": "song-level via max-severity pooling",
+  "pipeline_version": "v26",
+  "class_weights": {
+    "Safe": 0.7047216296195984,
+    "Mild": 0.9920634627342224,
+    "Explicit": 1.745200753211975
+  },
+  "training_class_counts": {
+    "Safe": 1892,
+    "Mild": 1344,
+    "Explicit": 764
+  },
+  "padding_pretrain": {
+    "phase": "pretrain",
+    "reference_tolerance": 0.0001,
+    "hard_fail": false,
+    "max_absolute_difference": 1.1920928955078125e-07,
+    "any_argmax_flip": false,
+    "cases": [
+      {
+        "case": "short",
+        "validation_row_position": 803,
+        "song_window_count": 1,
+        "selected_window": 1,
+        "selected_window_tokens": 23,
+        "fixed_probabilities": [
+          0.324408620595932,
+          0.3216204345226288,
+          0.3539709746837616
+        ],
+        "dynamic_probabilities": [
+          0.3244086802005768,
+          0.32162049412727356,
+          0.35397085547447205
+        ],
+        "mixed_probabilities": [
+          0.32440871000289917,
+          0.3216204047203064,
+          0.3539709150791168
+        ],
+        "max_absolute_difference": 1.1920928955078125e-07,
+        "argmax_flip": false,
+        "exceeds_reference_tolerance": false
+      },
+      {
+        "case": "median",
+        "validation_row_position": 666,
+        "song_window_count": 1,
+        "selected_window": 1,
+        "selected_window_tokens": 416,
+        "fixed_probabilities": [
+          0.32413187623023987,
+          0.3204532861709595,
+          0.35541486740112305
+        ],
+        "dynamic_probabilities": [
+          0.32413187623023987,
+          0.3204532861709595,
+          0.35541486740112305
+        ],
+        "mixed_probabilities": [
+          0.32413187623023987,
+          0.3204532265663147,
+          0.35541486740112305
+        ],
+        "max_absolute_difference": 5.960464477539063e-08,
+        "argmax_flip": false,
+        "exceeds_reference_tolerance": false
+      },
+      {
+        "case": "long",
+        "validation_row_position": 943,
+        "song_window_count": 15,
+        "selected_window": 15,
+        "selected_window_tokens": 402,
+        "fixed_probabilities": [
+          0.32368868589401245,
+          0.32102328538894653,
+          0.355288028717041
+        ],
+        "dynamic_probabilities": [
+          0.32368868589401245,
+          0.32102328538894653,
+          0.355288028717041
+        ],
+        "mixed_probabilities": [
+          0.32368868589401245,
+          0.32102322578430176,
+          0.3552880585193634
+        ],
+        "max_absolute_difference": 5.960464477539063e-08,
+        "argmax_flip": false,
+        "exceeds_reference_tolerance": false
+      }
+    ],
+    "reference_pass": true
+  },
+  "padding_posttrain": {
+    "phase": "posttrain",
+    "reference_tolerance": 0.0001,
+    "hard_fail": false,
+    "max_absolute_difference": 1.0728836059570312e-05,
+    "any_argmax_flip": false,
+    "cases": [
+      {
+        "case": "short",
+        "validation_row_position": 803,
+        "song_window_count": 1,
+        "selected_window": 1,
+        "selected_window_tokens": 23,
+        "fixed_probabilities": [
+          0.59330815076828,
+          0.35921382904052734,
+          0.047478046268224716
+        ],
+        "dynamic_probabilities": [
+          0.5933096408843994,
+          0.35921213030815125,
+          0.04747822508215904
+        ],
+        "mixed_probabilities": [
+          0.5932974219322205,
+          0.359223335981369,
+          0.04747923091053963
+        ],
+        "max_absolute_difference": 1.0728836059570312e-05,
+        "argmax_flip": false,
+        "exceeds_reference_tolerance": false
+      },
+      {
+        "case": "median",
+        "validation_row_position": 666,
+        "song_window_count": 1,
+        "selected_window": 1,
+        "selected_window_tokens": 416,
+        "fixed_probabilities": [
+          0.19213402271270752,
+          0.7146180272102356,
+          0.09324794262647629
+        ],
+        "dynamic_probabilities": [
+          0.19213402271270752,
+          0.7146180272102356,
+          0.09324794262647629
+        ],
+        "mixed_probabilities": [
+          0.1921350061893463,
+          0.7146186828613281,
+          0.09324629604816437
+        ],
+        "max_absolute_difference": 1.646578311920166e-06,
+        "argmax_flip": false,
+        "exceeds_reference_tolerance": false
+      },
+      {
+        "case": "long",
+        "validation_row_position": 943,
+        "song_window_count": 15,
+        "selected_window": 15,
+        "selected_window_tokens": 402,
+        "fixed_probabilities": [
+          0.06438406556844711,
+          0.3771832287311554,
+          0.5584326386451721
+        ],
+        "dynamic_probabilities": [
+          0.06438406556844711,
+          0.3771832287311554,
+          0.5584326386451721
+        ],
+        "mixed_probabilities": [
+          0.06438405066728592,
+          0.37718117237091064,
+          0.558434784412384
+        ],
+        "max_absolute_difference": 2.1457672119140625e-06,
+        "argmax_flip": false,
+        "exceeds_reference_tolerance": false
+      }
+    ],
+    "reference_pass": true
+  },
+  "optimizer_steps_planned": 7200,
+  "warmup_steps_planned": 720,
+  "optimizer_steps_completed": 2880,
+  "checkpoint_sha256": "4ce2ebc9615cd555e8c65a27ec71c3f237c9ee9bf26eeb7ee116c426865a9649",
+  "validation_macro_f1": 0.6944502294138664,
+  "best_epoch": 2,
+  "best_validation_macro_f1": 0.6944502294138664
+}

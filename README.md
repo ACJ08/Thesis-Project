@@ -10,10 +10,20 @@ The system uses a hybrid **RoBERTa → CNN → LSTM** architecture for lyric cla
 
 ## v26 desktop application
 
-From the project folder, run these commands using the Python environment for the classifier.
+On Windows, double-click `dist/LyricClassificationStudio/LyricClassificationStudio.exe`. Keep its `_internal` folder beside it. The bundle includes Python and the app libraries, so launching it requires no Python installation or terminal.
+
+The executable uses the project’s existing `data` and `experiments` folders. If you move it to another computer, copy the entire `LyricClassificationStudio` folder and place those asset folders inside it. Model weights and datasets are separate from the application bundle. Transformer models may need an internet connection to fetch pretrained assets on first use.
+
+To rebuild the Windows app from source, run these commands from the project folder using the classifier’s Python environment.
 
 ```powershell
 python -m pip install -r requirements.txt
+python -m PyInstaller --noconfirm LyricClassificationStudio.spec
+```
+
+To run the GUI directly from source, use:
+
+```powershell
 python thesis_gui.py
 ```
 

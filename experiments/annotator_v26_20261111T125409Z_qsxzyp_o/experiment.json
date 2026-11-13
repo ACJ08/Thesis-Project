@@ -1,0 +1,73 @@
+{
+  "seeds": [
+    67,
+    42,
+    123
+  ],
+  "models": [
+    "hybrid",
+    "bert_cnn_lstm",
+    "lstm_cnn",
+    "roberta"
+  ],
+  "smoke_test": false,
+  "sources": {
+    "A": {
+      "path": "C:\\Users\\Sephie\\OneDrive\\Desktop\\Thesis Perturb Permute\\Thesis-Project\\data\\Training_Cleaned.csv",
+      "sha256": "3ddf257eca804e3ee848f1314acecebade33460ca1b5c478810a52b4c8602cf2",
+      "raw_rows": 5988,
+      "valid_rows": 5988
+    },
+    "B_validation": {
+      "path": "C:\\Users\\Sephie\\OneDrive\\Desktop\\Thesis Perturb Permute\\Thesis-Project\\data\\Validation_Cleaned.csv",
+      "sha256": "0c4bc601229dbbdd508a670808ae084e6a16badb6e8aed54a01c40f0398b4a12",
+      "raw_rows": 5000,
+      "valid_rows": 5000
+    },
+    "B_test": {
+      "path": "C:\\Users\\Sephie\\OneDrive\\Desktop\\Thesis Perturb Permute\\Thesis-Project\\data\\Testing_Cleaned.csv",
+      "sha256": "70ec6f7e6d79920d0c135a2c165b165f75a8140afbbc370a2cb48e2eb8c635f6",
+      "raw_rows": 4998,
+      "valid_rows": 4998
+    }
+  },
+  "runner_sha256": "e4f5fb668b4030c46b4e9ae8eee029ac058bfe490e6cf8b47720bcd2caafa1c7",
+  "v26_sha256": "5ae7185a786b1a0083233fff32c406ad7cca86e926899808d4a8207a2e301ee4",
+  "reporting_sha256": "14c5be6328476cd0ba415567f1d2447c2e9d4c341a01aaa073a2dfd1cd4d9fce",
+  "learning_curve_sha256": "2a9c8d2d6e1e65df2de2642d2fcd657dbd57c04b796b441ac0ac77ea37441329",
+  "label_mapping": {
+    "Safe": 0,
+    "Mild": 1,
+    "Explicit": 2
+  },
+  "annotator_provenance": "Human annotation assignments supplied by user.",
+  "allocation": {
+    "training": 4000,
+    "validation": 1000,
+    "test": 988
+  },
+  "resamples": 2000,
+  "python": "3.14.0",
+  "device": "cuda",
+  "dependencies": {
+    "torch": "2.13.0+cu132",
+    "transformers": "5.5.0",
+    "numpy": "2.5.2",
+    "pandas": "3.0.6",
+    "scikit-learn": "1.8.0",
+    "scipy": "1.17.1",
+    "matplotlib": "3.10.9"
+  },
+  "model_configuration": {
+    "EPOCHS": 10,
+    "BATCH_SIZE": 2,
+    "GRADIENT_ACCUMULATION_STEPS": 4,
+    "LEARNING_RATE": 2e-05,
+    "BASELINE_LEARNING_RATE": 2e-05,
+    "BASELINE_LSTM_LEARNING_RATE": 0.001,
+    "WARMUP_RATIO": 0.1,
+    "EARLY_STOPPING_PATIENCE": 2,
+    "EARLY_STOPPING_MIN_DELTA": 0.001,
+    "EXCLUDE_NEEDS_REVISION": false
+  }
+}

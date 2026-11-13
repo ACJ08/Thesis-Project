@@ -1,0 +1,85 @@
+{
+  "phase": "posttrain",
+  "reference_tolerance": 0.0001,
+  "hard_fail": false,
+  "max_absolute_difference": 1.5497207641601562e-06,
+  "any_argmax_flip": false,
+  "cases": [
+    {
+      "case": "short",
+      "validation_row_position": 1013,
+      "song_window_count": 1,
+      "selected_window": 1,
+      "selected_window_tokens": 23,
+      "fixed_probabilities": [
+        0.08674304932355881,
+        0.8472354412078857,
+        0.06602150201797485
+      ],
+      "dynamic_probabilities": [
+        0.08674338459968567,
+        0.847235381603241,
+        0.06602124124765396
+      ],
+      "mixed_probabilities": [
+        0.08674149960279465,
+        0.8472365736961365,
+        0.06602190434932709
+      ],
+      "max_absolute_difference": 1.5497207641601562e-06,
+      "argmax_flip": false,
+      "exceeds_reference_tolerance": false
+    },
+    {
+      "case": "median",
+      "validation_row_position": 2602,
+      "song_window_count": 1,
+      "selected_window": 1,
+      "selected_window_tokens": 342,
+      "fixed_probabilities": [
+        0.9137214422225952,
+        0.07004839926958084,
+        0.01623006910085678
+      ],
+      "dynamic_probabilities": [
+        0.9137215614318848,
+        0.07004839181900024,
+        0.016230063512921333
+      ],
+      "mixed_probabilities": [
+        0.9137214422225952,
+        0.07004865258932114,
+        0.016229890286922455
+      ],
+      "max_absolute_difference": 2.5331974029541016e-07,
+      "argmax_flip": false,
+      "exceeds_reference_tolerance": false
+    },
+    {
+      "case": "long",
+      "validation_row_position": 2534,
+      "song_window_count": 30,
+      "selected_window": 30,
+      "selected_window_tokens": 510,
+      "fixed_probabilities": [
+        0.07533422857522964,
+        0.8603248596191406,
+        0.06434091925621033
+      ],
+      "dynamic_probabilities": [
+        0.07533422857522964,
+        0.8603248596191406,
+        0.06434091925621033
+      ],
+      "mixed_probabilities": [
+        0.07533328980207443,
+        0.860325038433075,
+        0.06434160470962524
+      ],
+      "max_absolute_difference": 9.387731552124023e-07,
+      "argmax_flip": false,
+      "exceeds_reference_tolerance": false
+    }
+  ],
+  "reference_pass": true
+}

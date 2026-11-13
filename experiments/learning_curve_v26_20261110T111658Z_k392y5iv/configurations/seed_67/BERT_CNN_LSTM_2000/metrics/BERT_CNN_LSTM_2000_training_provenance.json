@@ -1,0 +1,28 @@
+{
+  "raw_rows": 2000,
+  "flagged_before_filter": 0,
+  "retained_rows": 2000,
+  "exclude_needs_revision": false,
+  "needs_revision": {
+    "available": false
+  },
+  "needs_review": {
+    "available": false
+  },
+  "human_label": {
+    "available": false
+  },
+  "label_source": {
+    "available": false
+  },
+  "review_status": {
+    "available": false
+  },
+  "reviewed_by": {
+    "available": false
+  },
+  "annotator": {
+    "available": false
+  },
+  "human_verification_confirmed": false
+}

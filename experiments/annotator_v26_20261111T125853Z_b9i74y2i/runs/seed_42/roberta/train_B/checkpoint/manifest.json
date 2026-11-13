@@ -1,0 +1,256 @@
+{
+  "architecture": "roberta",
+  "run_id": "annotator",
+  "smoke_test": false,
+  "checkpoint_selection": "validation_macro_f1",
+  "test_evaluated_during_training": false,
+  "preprocessing": "shared clean_lyrics from v26 (NFKC and section-tag removal)",
+  "tokenizer": "roberta-base",
+  "token_policy": "ALL lyrics tokens via overlapping 512-token windows; NO first-window truncation",
+  "input_policy": "ALL lyrics tokens via overlapping 512-token windows; NO first-window truncation",
+  "input_max_length": 512,
+  "seed": 42,
+  "training_rows": 4000,
+  "validation_rows": 1000,
+  "heldout_test_rows": 986,
+  "training_class_counts": {
+    "Safe": 1842,
+    "Mild": 1294,
+    "Explicit": 864
+  },
+  "class_weights": {
+    "Safe": 0.7238508867173362,
+    "Mild": 1.0303967027305512,
+    "Explicit": 1.5432098765432098
+  },
+  "gradient_objective": "sum (class-weighted CE * inverse song-window count) / sum (class weight * inverse song-window count) per effective batch",
+  "max_epochs": 10,
+  "batch_size": 2,
+  "gradient_accumulation_steps": 4,
+  "learning_rate": 2e-05,
+  "planned_optimizer_steps": 7310,
+  "planned_warmup_steps": 731,
+  "exclude_needs_revision": false,
+  "provenance": {
+    "raw_rows": 4000,
+    "flagged_before_filter": 0,
+    "retained_rows": 4000,
+    "exclude_needs_revision": false,
+    "needs_revision": {
+      "available": false
+    },
+    "needs_review": {
+      "available": false
+    },
+    "human_label": {
+      "available": false
+    },
+    "label_source": {
+      "available": false
+    },
+    "review_status": {
+      "available": false
+    },
+    "reviewed_by": {
+      "available": false
+    },
+    "annotator": {
+      "available": true,
+      "nonempty_count": 4000
+    },
+    "human_verification_confirmed": false
+  },
+  "input_sha256": {
+    "training": "aadb33327be272824fdc369610ba99d8aa9f1b0b88ea81e345fc2bb77a9a84a4",
+    "validation": "f504d136a49057399c53080a3b0be0f1d43eb7e4538ab3a18205b9fb192828ee",
+    "test": "564ba75a6f703b254e80e14102491b49f0a01906e2c7c9ca946e0967a0b3a80c"
+  },
+  "python": "3.14.0",
+  "torch": "2.13.0+cu132",
+  "dependencies": {
+    "transformers": "5.5.0",
+    "pandas": "3.0.6",
+    "scikit-learn": "1.8.0"
+  },
+  "chunk_overlap_tokens": 64,
+  "chunk_pooling": "max_severity",
+  "training_objective": "chunk-level weighted cross-entropy, each window inherits song label",
+  "song_weighting": "each song's chunk weights sum to 1",
+  "evaluation_unit": "song-level via max-severity pooling",
+  "pipeline_version": "v26",
+  "padding_pretrain": {
+    "phase": "pretrain",
+    "reference_tolerance": 0.0001,
+    "hard_fail": false,
+    "max_absolute_difference": 5.960464477539063e-08,
+    "any_argmax_flip": false,
+    "cases": [
+      {
+        "case": "short",
+        "validation_row_position": 300,
+        "song_window_count": 1,
+        "selected_window": 1,
+        "selected_window_tokens": 50,
+        "fixed_probabilities": [
+          0.36338651180267334,
+          0.2881942689418793,
+          0.3484192490577698
+        ],
+        "dynamic_probabilities": [
+          0.36338648200035095,
+          0.2881942391395569,
+          0.3484192490577698
+        ],
+        "mixed_probabilities": [
+          0.36338648200035095,
+          0.2881942391395569,
+          0.3484192490577698
+        ],
+        "max_absolute_difference": 2.9802322387695312e-08,
+        "argmax_flip": false,
+        "exceeds_reference_tolerance": false
+      },
+      {
+        "case": "median",
+        "validation_row_position": 89,
+        "song_window_count": 1,
+        "selected_window": 1,
+        "selected_window_tokens": 388,
+        "fixed_probabilities": [
+          0.3587667644023895,
+          0.28807562589645386,
+          0.35315757989883423
+        ],
+        "dynamic_probabilities": [
+          0.3587667644023895,
+          0.28807562589645386,
+          0.35315757989883423
+        ],
+        "mixed_probabilities": [
+          0.3587667644023895,
+          0.2880755662918091,
+          0.3531576097011566
+        ],
+        "max_absolute_difference": 5.960464477539063e-08,
+        "argmax_flip": false,
+        "exceeds_reference_tolerance": false
+      },
+      {
+        "case": "long",
+        "validation_row_position": 414,
+        "song_window_count": 6,
+        "selected_window": 6,
+        "selected_window_tokens": 125,
+        "fixed_probabilities": [
+          0.3607232868671417,
+          0.28903281688690186,
+          0.35024386644363403
+        ],
+        "dynamic_probabilities": [
+          0.3607233166694641,
+          0.28903281688690186,
+          0.35024386644363403
+        ],
+        "mixed_probabilities": [
+          0.3607232868671417,
+          0.28903278708457947,
+          0.35024386644363403
+        ],
+        "max_absolute_difference": 2.9802322387695312e-08,
+        "argmax_flip": false,
+        "exceeds_reference_tolerance": false
+      }
+    ],
+    "reference_pass": true
+  },
+  "padding_posttrain": {
+    "phase": "posttrain",
+    "reference_tolerance": 0.0001,
+    "hard_fail": false,
+    "max_absolute_difference": 1.5832483768463135e-08,
+    "any_argmax_flip": false,
+    "cases": [
+      {
+        "case": "short",
+        "validation_row_position": 300,
+        "song_window_count": 1,
+        "selected_window": 1,
+        "selected_window_tokens": 50,
+        "fixed_probabilities": [
+          0.9885962605476379,
+          0.008836229331791401,
+          0.0025674705393612385
+        ],
+        "dynamic_probabilities": [
+          0.9885962605476379,
+          0.0088362330570817,
+          0.0025674740318208933
+        ],
+        "mixed_probabilities": [
+          0.9885962605476379,
+          0.0088362330570817,
+          0.002567472867667675
+        ],
+        "max_absolute_difference": 3.725290298461914e-09,
+        "argmax_flip": false,
+        "exceeds_reference_tolerance": false
+      },
+      {
+        "case": "median",
+        "validation_row_position": 89,
+        "song_window_count": 1,
+        "selected_window": 1,
+        "selected_window_tokens": 388,
+        "fixed_probabilities": [
+          0.9932498931884766,
+          0.005304358899593353,
+          0.0014457611832767725
+        ],
+        "dynamic_probabilities": [
+          0.9932498931884766,
+          0.005304358899593353,
+          0.0014457611832767725
+        ],
+        "mixed_probabilities": [
+          0.9932498931884766,
+          0.005304358899593353,
+          0.0014457618817687035
+        ],
+        "max_absolute_difference": 6.984919309616089e-10,
+        "argmax_flip": false,
+        "exceeds_reference_tolerance": false
+      },
+      {
+        "case": "long",
+        "validation_row_position": 414,
+        "song_window_count": 6,
+        "selected_window": 6,
+        "selected_window_tokens": 125,
+        "fixed_probabilities": [
+          0.004596627317368984,
+          0.9326839447021484,
+          0.06271942704916
+        ],
+        "dynamic_probabilities": [
+          0.004596631042659283,
+          0.9326839447021484,
+          0.0627194419503212
+        ],
+        "mixed_probabilities": [
+          0.004596611484885216,
+          0.9326839447021484,
+          0.06271942704916
+        ],
+        "max_absolute_difference": 1.5832483768463135e-08,
+        "argmax_flip": false,
+        "exceeds_reference_tolerance": false
+      }
+    ],
+    "reference_pass": true
+  },
+  "best_epoch": 2,
+  "best_validation_macro_f1": 0.8028439607826919,
+  "validation_macro_f1": 0.8028439607826919,
+  "optimizer_steps_completed": 2924,
+  "checkpoint_sha256": "e02b5f62cdfdd71f315b6ba0294578bbffd2613f7b1892dbe2c4fa4e198877f8"
+}

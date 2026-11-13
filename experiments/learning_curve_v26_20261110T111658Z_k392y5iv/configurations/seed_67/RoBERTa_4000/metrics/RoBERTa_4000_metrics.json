@@ -1,0 +1,150 @@
+{
+  "model": "RoBERTa",
+  "size": "4000",
+  "seed": 67,
+  "training_songs": 4000,
+  "training_class_counts": {
+    "Safe": 1893,
+    "Mild": 1343,
+    "Explicit": 764
+  },
+  "class_weights": {
+    "Safe": 0.7043493572812115,
+    "Mild": 0.9928021841648051,
+    "Explicit": 1.7452006980802792
+  },
+  "validation_class_counts": {
+    "Safe": 2193,
+    "Mild": 1594,
+    "Explicit": 1213
+  },
+  "test_class_counts": {
+    "Safe": 2412,
+    "Mild": 1640,
+    "Explicit": 946
+  },
+  "training_duration_seconds": 1854.9657432999957,
+  "best_epoch": 2,
+  "best_validation_loss": 0.8837930177312643,
+  "validation": {
+    "accuracy": 0.7396,
+    "macro_f1": 0.7076521691892613,
+    "weighted_f1": 0.72387814331693,
+    "per_class": {
+      "Safe": {
+        "precision": 0.7764044943820225,
+        "recall": 0.945280437756498,
+        "f1": 0.8525601480567551,
+        "support": 2193,
+        "error_rate": 0.05471956224350205
+      },
+      "Mild": {
+        "precision": 0.6901811248808389,
+        "recall": 0.45420326223337515,
+        "f1": 0.5478622777147181,
+        "support": 1594,
+        "error_rate": 0.5457967377666249
+      },
+      "Explicit": {
+        "precision": 0.7033567525370804,
+        "recall": 0.7427864798021434,
+        "f1": 0.7225340817963112,
+        "support": 1213,
+        "error_rate": 0.2572135201978566
+      }
+    },
+    "confusion_matrix": [
+      [
+        2073,
+        108,
+        12
+      ],
+      [
+        502,
+        724,
+        368
+      ],
+      [
+        95,
+        217,
+        901
+      ]
+    ],
+    "directional_errors": {
+      "Safe_to_Mild": 108,
+      "Safe_to_Explicit": 12,
+      "Mild_to_Safe": 502,
+      "Mild_to_Explicit": 368,
+      "Explicit_to_Safe": 95,
+      "Explicit_to_Mild": 217
+    },
+    "macro_precision": 0.723314123933314,
+    "macro_recall": 0.7140900599306722,
+    "confusion_matrix_label_order": [
+      "Safe",
+      "Mild",
+      "Explicit"
+    ]
+  },
+  "test": {
+    "accuracy": 0.7458983593437375,
+    "macro_f1": 0.7091749000956061,
+    "weighted_f1": 0.7339536999152526,
+    "per_class": {
+      "Safe": {
+        "precision": 0.8291666666666667,
+        "recall": 0.9075456053067993,
+        "f1": 0.8665874901029296,
+        "support": 2412,
+        "error_rate": 0.09245439469320071
+      },
+      "Mild": {
+        "precision": 0.694775435380385,
+        "recall": 0.46219512195121953,
+        "f1": 0.5551080190406444,
+        "support": 1640,
+        "error_rate": 0.5378048780487805
+      },
+      "Explicit": {
+        "precision": 0.6164167324388319,
+        "recall": 0.8255813953488372,
+        "f1": 0.7058291911432445,
+        "support": 946,
+        "error_rate": 0.17441860465116277
+      }
+    },
+    "confusion_matrix": [
+      [
+        2189,
+        190,
+        33
+      ],
+      [
+        429,
+        758,
+        453
+      ],
+      [
+        22,
+        143,
+        781
+      ]
+    ],
+    "directional_errors": {
+      "Safe_to_Mild": 190,
+      "Safe_to_Explicit": 33,
+      "Mild_to_Safe": 429,
+      "Mild_to_Explicit": 453,
+      "Explicit_to_Safe": 22,
+      "Explicit_to_Mild": 143
+    },
+    "macro_precision": 0.7134529448286279,
+    "macro_recall": 0.731774040868952,
+    "confusion_matrix_label_order": [
+      "Safe",
+      "Mild",
+      "Explicit"
+    ]
+  },
+  "checkpoint": "checkpoints/RoBERTa_4000_best_model.pt"
+}

@@ -1,0 +1,13 @@
+{
+  "artifacts": {
+    "best_model.pt": "264cab5aeadcaa9e97600a6de56b19c8e0ba2fa02164ca1937a9124b883ad2b8",
+    "epoch_history.csv": "643758693358efbe0bac3888ce51a062e420ae1af898280e0ed650cc867f4e6e",
+    "manifest.json": "27073594c4d45afcf7abc4174c62bece5048f4189a67a6e5eb58810962681d93",
+    "padding_invariance_posttrain.json": "810ed83540f59fd53bd64ca2ef035a8247a0f3bec88bbe5a9dba7ead07d29197",
+    "padding_invariance_pretrain.json": "7c062783f5dd976b09006de2d7d89ea49197b89fb5fee577dff67949682000fd",
+    "training_metadata.json": "4c7a63a98ddb1aef0cdc9281d6e0492b7113c1322322d5bc7bc73b70ec4b5822",
+    "training_provenance.json": "0d5fbf18a645b743abb9e807b3f6620236e37b3b5c5024bb27c0dee6eff6b4ed",
+    "validation_metrics.json": "2b0b5cdcdd3be6eadc53e695fee402c0d98e5eb100d38ab1debe6e1f75228242",
+    "validation_predictions.csv": "18275736c9840b0ec859b208d5e859e8ae18e1b0af364948e11e65e6e2f400f7"
+  }
+}
