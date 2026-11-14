@@ -10,6 +10,8 @@ import numpy as np
 import pandas as pd
 import torch
 
+from thesis_gui_schema import validate_job
+
 import lyric_classifier_v26_all_models as clf
 
 
@@ -48,19 +50,42 @@ def train_or_compare(job):
     clf.main_v26()
     if clf.FROZEN_TEST_EVALUATION:
         folder = clf.PROJECT_DIR / "experiments" / f"comparison_v26_{clf.RUN_ID}"
-        return {"message": str(folder), "tables": {
-            "Held-out comparison": pd.read_csv(folder / "model_comparison.csv").to_dict("records")
-        }}
+        records = pd.read_csv(folder / 'model_comparison.csv').to_dict('records')
+        charts = [{'title': 'Held-out model comparison', 'kind': 'bar', 'labels': [r['model'] for r in records],
+                   'series': [{'name': metric, 'y': [r[metric] for r in records]}
+                              for metric in ('test_accuracy', 'test_macro_f1', 'test_weighted_f1')]}]
+        confusion = pd.read_csv(folder / 'model_comparison_confusion.csv')
+        for name in clf.ALL_NAMES:
+            subset = confusion.loc[confusion['model'].eq(name)]
+            matrix = [[int(subset.loc[subset['true_label'].eq(clf.ID2LABEL[r]) & subset['predicted_label'].eq(clf.ID2LABEL[c]), 'count'].sum())
+                       for c in range(3)] for r in range(3)]
+            charts.append({'title': f'{name} · Held-out confusion matrix', 'matrix': matrix})
+        return {'message': str(folder), 'output_paths': [str(folder)], 'charts': charts,
+                'tables': {'Held-out comparison': records}}
     folder = clf.PROJECT_DIR / "experiments"
-    rows = []
+    rows, charts, output_paths = [], [], []
     for name in clf.ALL_NAMES:
         path = folder / f"{name}_v26_{clf.RUN_ID}" / "validation_metrics.json"
         if path.is_file():
             metrics = json.loads(path.read_text(encoding="utf-8"))
+            run_folder = path.parent
+            output_paths.append(str(run_folder))
+            if metrics.get('confusion_matrix'):
+                charts.append({'title': f'{name} · Validation confusion matrix', 'matrix': metrics['confusion_matrix']})
+            history_path = run_folder / 'epoch_history.csv'
+            if history_path.is_file():
+                history = pd.read_csv(history_path)
+                for group, columns in (('Loss', ('train_loss', 'validation_loss')), ('Validation scores', ('validation_accuracy', 'validation_macro_f1'))):
+                    series = [{'name': column, 'y': history[column].tolist()} for column in columns if column in history]
+                    if series:
+                        charts.append({'title': f'{name} · {group}', 'labels': history['epoch'].tolist(), 'series': series})
             rows.append({"Model": name, "Accuracy": metrics["accuracy"],
                          "Macro F1": metrics["macro_f1"], "Weighted F1": metrics["weighted_f1"]})
-    return {"message": f"Run ID {clf.RUN_ID}\nResults in {folder}",
-            "tables": {"Validation metrics": rows}}
+    if rows:
+        charts.insert(0, {'title': 'Validation model comparison', 'kind': 'bar', 'labels': [r['Model'] for r in rows],
+                          'series': [{'name': metric, 'y': [r[metric] for r in rows]} for metric in ('Accuracy', 'Macro F1', 'Weighted F1')]})
+    return {'message': f'Run ID {clf.RUN_ID}\nResults in {folder}', 'output_paths': output_paths,
+            'charts': charts, 'tables': {'Validation metrics': rows}}
 
 
 def label(job, model, tokenizer):
@@ -84,11 +109,14 @@ def label(job, model, tokenizer):
         raise ValueError("Choose the lyrics column. Automatic detection accepts lyrics or text.")
     if any(column in frame for column in columns):
         raise ValueError("The input CSV already has v26 output columns.")
-    predictions = [predict(text) for text in clf.tqdm(frame[lyric_column], desc="Labeling songs")]
+    predictions = []
+    for index, text in enumerate(frame[lyric_column], 1):
+        predictions.append(predict(text))
+        report_progress(f'Classifying songs · {index}/{len(frame)}')
     frame[columns] = pd.DataFrame(predictions, index=frame.index, columns=columns)
     frame.to_csv(output, index=False, encoding="utf-8-sig")
     labels = frame["v26_label"].replace("", "Skipped empty lyrics")
-    return {"message": str(output), "tables": {
+    return {"message": str(output), "output_paths": [str(output)], "tables": {
         "Label counts": [{"Label": key, "Songs": int(value)} for key, value in labels.value_counts().items()]
     }}
 
@@ -182,8 +210,9 @@ def explain_method(job, model, tokenizer, method):
     rng = random.Random(clf.RANDOM_SEED)
     if not job["validation"]:
         message, attribution, erasure = explain_song(job["lyrics"], model, tokenizer, method, rng)
-        return {"message": message, "tables": {"Contributions": attribution, "Erasure": erasure},
-                "highlights": {method: sorted(attribution, key=lambda row: row["Position"])}}
+        return {"message": message, 'charts': [erasure_chart(method, erasure)], "tables": {"Contributions": attribution, "Erasure": erasure},
+                "highlights": {method: sorted(attribution, key=lambda row: row["Position"])},
+                'contexts': {method: '\n'.join(message.splitlines()[:2])}}
 
     from sklearn.model_selection import train_test_split
 
@@ -223,18 +252,29 @@ def explain_method(job, model, tokenizer, method):
     folder.mkdir(parents=True)
     detail_frame.to_csv(folder / "eraser_per_song.csv", index=False)
     summary.to_csv(folder / "summary.csv", index=False)
-    return {"message": f"{method} local evidence-window erasure | Skipped {skipped} short songs\n{folder}",
-            "tables": {"Erasure summary": summary.to_dict("records")}}
+    records = summary.to_dict('records')
+    return {'message': f'{method} local evidence-window erasure | Skipped {skipped} short songs\n{folder}',
+            'output_paths': [str(folder)], 'charts': [erasure_chart(method, records)],
+            'tables': {'Erasure summary': records}}
+
+
+def erasure_chart(method, rows):
+    return {'title': f'{method} · Erasure comprehensiveness', 'labels': [f'{r["Erasure %"]}%' for r in rows],
+            'series': [{'name': 'Ranked deletion', 'y': [r['Comprehensiveness'] for r in rows]},
+                       {'name': 'Random deletion', 'y': [r.get('Random mean', r.get('Random_mean')) for r in rows]}]}
 
 
 def explain(job, model, tokenizer):
     if job["method"] != "Both":
         return explain_method(job, model, tokenizer, job["method"])
-    combined = {"message": "", "tables": {}, "highlights": {}}
+    combined = {"message": "", "tables": {}, "highlights": {}, "charts": [], "output_paths": [], "contexts": {}}
     messages = []
     for method in ("LIME", "SHAP"):
         result = explain_method(job, model, tokenizer, method)
         messages.append(result["message"])
+        combined['charts'].extend(result.get('charts', []))
+        combined['contexts'].update(result.get('contexts', {}))
+        combined['output_paths'].extend(result.get('output_paths', []))
         combined["tables"].update({f"{method} {name}": rows for name, rows in result["tables"].items()})
         combined["highlights"].update(result.get("highlights", {}))
     combined["message"] = "\n\n".join(messages)
@@ -251,12 +291,14 @@ def run_job(request, result, project_dir):
         name: project_dir / "experiments" / Path(directory).name
         for name, directory in clf.FROZEN_RUN_DIRS.items()
     }
-    job = json.loads(request.read_text(encoding="utf-8"))
+    job = validate_job(json.loads(request.read_text(encoding="utf-8")), project_dir)
     print(f"v26 device: {clf.DEVICE}", flush=True)
     if job["action"] == "train":
         output = train_or_compare(job)
     else:
+        report_progress('Loading checkpoint · ' + job['model'])
         model, tokenizer = load_model(job["model"], Path(job["run"]))
+        report_progress('Model ready · ' + job['action'])
         operation = label if job["action"] == "label" else explain
         output = operation(job, model, tokenizer)
     result.write_text(json.dumps(output, default=str), encoding="utf-8")

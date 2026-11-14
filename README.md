@@ -29,11 +29,23 @@ python thesis_gui.py
 
 Python needs Tkinter, which is included with the standard Windows Python installer when Tcl/Tk support is enabled. Transformer models may need to download their pretrained assets on first use. Jobs run in a background process and report progress in **Run log**.
 
-- **Training** lets you select one model, all three baselines, all four models, or the frozen held-out comparison. Smoke test is enabled by default. Leave the CSV fields blank to use the project's cleaned splits, or browse to separate labeled training, validation, and test CSVs. Frozen comparison requires four full v26 run folders and the same dataset hashes recorded during training.
-- **Classification** loads a trained checkpoint for inference. Paste one song or select a CSV and save a labeled copy. The CSV needs a `lyrics` or `text` column, or you can enter its column name. Original columns are preserved, and empty lyrics are skipped. The displayed probability belongs to the selected evidence window.
+- **Training** lets you select one model, all three baselines, or all four models. **Comparison** is a separate workflow for the frozen held-out comparison. Smoke test is enabled by default. Leave the CSV fields blank to use the project's cleaned splits, or browse to separate labeled training, validation, and test CSVs. Frozen comparison requires four full v26 run folders and the same dataset hashes recorded during training.
+- **Classification** loads a trained checkpoint for inference. Choose **Single song** or **CSV batch** explicitly. Paste one song or select a CSV and save a labeled copy. The CSV needs a `lyrics` or `text` column, or you can enter its column name. Original columns are preserved, and empty lyrics are skipped. The displayed probability belongs to the selected evidence window.
 - **LIME / SHAP** offers either method individually or **LIME + SHAP** in one run. Each method highlights features in the selected evidence window and reports signed contributions and comprehensiveness at 5%, 10%, and 20% erasure, with equal-count random deletion as a baseline. The status line and **Run log** show the current method and erasure stage. The validation action runs the selected methods on a stratified sample and writes per-song and summary CSVs under `eraser_results`.
 
-For labeling and explanations, choose an experiment folder containing `best_model.pt` or leave the field blank to use the newest local run for that model. LSTM–CNN also needs the matching `vocabulary.json`.
+For labeling and explanations, select a checkpoint from the dropdown or browse to an experiment folder containing `best_model.pt`. The dropdown discovers nested v26 experiment checkpoints and shows their model, file date, smoke/full status, and relative folder. The selected folder and manifest run ID are shown before execution. LSTM–CNN also needs the matching `vocabulary.json`.
+
+The resizable divider gives output about 70% of the available workspace initially and about 77% when a run starts. **Expand output** enlarges logs/results; drag the divider downward to enlarge the scrollable configuration area. Results include a single-song prediction card, training curves, confusion matrices, model comparisons, and erasure charts when the corresponding operation produces those data. Elapsed time and live stages appear above the output. Failure is red; cancellation is yellow.
+
+Selections are saved automatically in `.lyric_studio/settings.json`: model and checkpoint per workflow/model, CSV fields, explanation options, and browsing/output folders. Lyrics are not saved as preferences. Completed, failed, and cancelled runs are archived under `.lyric_studio/history` with configuration, log, summary, and available results. **Run history** reopens them; **Open output folder**, **Export results** (JSON, logs and CSV tables), and **View configuration** act on the selected run. Run configurations include the submitted lyrics for reproducibility. These local app files are ignored by Git.
+
+`thesis_gui_schema.py` defines request schema version 1 for training, classification, and explanation. Both the GUI preflight and worker enforce it. It checks field types/enums, required input, CSV headers, separate dataset/output paths, checkpoint architecture/version, LSTM vocabulary, nonnegative sample sizes, and full-run dataset hashes for frozen comparison. Preflight runs in a background thread; the model pipeline additionally enforces its full scientific policy and checkpoint integrity checks.
+
+Run regression checks without model downloads or training:
+
+```powershell
+python -m unittest test_thesis_gui -v
+```
 
 ---
 
