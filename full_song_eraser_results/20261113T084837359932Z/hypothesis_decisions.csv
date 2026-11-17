@@ -1,0 +1,9 @@
+Model,Method,Significant drop levels,Significantly above random
+hybrid,LIME,"5%, 10%, 20%","5%, 10%, 20%"
+hybrid,SHAP,"5%, 10%, 20%","5%, 10%, 20%"
+bert_cnn_lstm,LIME,"5%, 10%, 20%","5%, 10%, 20%"
+bert_cnn_lstm,SHAP,"5%, 10%, 20%","5%, 10%, 20%"
+lstm_cnn,LIME,"5%, 10%, 20%","5%, 10%, 20%"
+lstm_cnn,SHAP,"5%, 10%, 20%","5%, 10%, 20%"
+roberta,LIME,"5%, 10%, 20%","5%, 10%, 20%"
+roberta,SHAP,"5%, 10%, 20%","5%, 10%, 20%"

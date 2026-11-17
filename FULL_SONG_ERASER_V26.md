@@ -17,6 +17,8 @@ No input is truncated to one evidence window. LIME uses an empty mask string
 for actual deletion. SHAP uses positional binary word-presence features and an
 empty-text background. Signed attributions are ranked in descending order for
 the original predicted class.
+Top-k rankings can include zero or negative attributions when fewer than k%
+of positions have positive support; the requested deletion count is still used.
 
 The target class remains the original song prediction. Its score is the target
 class probability in the evidence window selected by the full inference pipeline

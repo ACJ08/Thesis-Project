@@ -1,5 +1,5 @@
 {
-  "status": "running",
+  "status": "complete",
   "config": {
     "models": [
       "hybrid",
@@ -33,5 +33,9 @@
     "bert_cnn_lstm": "C:\\Users\\Sephie\\OneDrive\\Desktop\\Thesis\\actual project\\Thesis-Project\\experiments\\bert_cnn_lstm_v26_20261107T000459Z",
     "lstm_cnn": "C:\\Users\\Sephie\\OneDrive\\Desktop\\Thesis\\actual project\\Thesis-Project\\experiments\\lstm_cnn_v26_20261107T000459Z",
     "roberta": "C:\\Users\\Sephie\\OneDrive\\Desktop\\Thesis\\actual project\\Thesis-Project\\experiments\\roberta_v26_20261107T000459Z"
-  }
+  },
+  "model_song_conditions": 120,
+  "records": 720,
+  "tests": 48,
+  "multiple_testing": "Holm across all requested models/methods/levels/controls"
 }

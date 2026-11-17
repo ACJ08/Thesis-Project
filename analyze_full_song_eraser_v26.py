@@ -1,5 +1,6 @@
 """Validate and report a completed full-song, multi-model ERASER experiment."""
 import argparse
+import html
 import json
 from pathlib import Path
 
@@ -30,9 +31,16 @@ def main():
     stats = pd.read_csv(root/'faithfulness_statistics.csv')
     selection = pd.read_csv(root/'selected_songs.csv')
     models = metadata['config']['models']
+    random_tests = stats.loc[stats.control.eq('random')]
+    zero_tests = stats.loc[stats.control.eq('zero')]
     expected = len(models)*len(selection)
     assert len(original) == expected and len(frame) == expected*6 and len(stats) == len(models)*12
     assert not original.duplicated(['model', 'validation_row']).any()
+    assert original.groupby('model').size().reindex(models).eq(len(selection)).all()
+    for model in models:
+        assert set(original.loc[original.model.eq(model), 'validation_row']) == set(selection.validation_row)
+    assert set(zip(frame.model, frame.validation_row)) == set(zip(original.model, original.validation_row))
+    assert original.groupby('validation_row').word_count.nunique().eq(1).all()
     assert not frame.duplicated(['model', 'validation_row', 'method', 'erasure_percent']).any()
     assert frame.groupby(['model', 'validation_row']).size().eq(6).all()
     assert set(frame.model) == set(models)
@@ -63,12 +71,38 @@ def main():
                                                                'unique_texts_scored', 'windows_scored']}))
     diagnostics = pd.DataFrame(diagnostics)
     diagnostics.to_csv(root/'explanation_diagnostics.csv', index=False)
+    index_rows = []
+    for item in original.itertuples(index=False):
+        relative = f'{item.model}/song_{item.validation_row:06d}'
+        cells = [html.escape(str(value)) for value in [item.model, item.song_name, item.artist,
+                 item.actual_label, item.predicted_label, f'{item.score:.4f}', item.total_windows]]
+        index_rows.append('<tr>'+''.join(f'<td>{value}</td>' for value in cells)
+                          +f'<td><a href="{relative}/explanations.html">LIME + SHAP</a> · '
+                           f'<a href="{relative}/lime.html">Native LIME</a></td></tr>')
+    index_html = '''<!doctype html><meta charset="utf-8"><title>Full-song explanation index</title>
+<style>body{font:16px Arial,sans-serif;margin:32px;color:#202830}table{border-collapse:collapse;width:100%}
+th,td{text-align:left;padding:10px;border-bottom:1px solid #ddd}th{background:#eef3f7}tr:nth-child(even){background:#fafafa}
+a{color:#12638c}p{max-width:1000px;line-height:1.5}</style><h1>Full-song explanation index</h1>
+<p>Frozen models on the same 30 validation songs. Each highlighted explanation concerns the original
+predicted class of the complete-song pipeline. Scores come from its dynamically selected evidence window;
+they are not calibrated whole-song probabilities. Use your browser's Find command to locate a song or model.</p>
+<table><thead><tr><th>Model</th><th>Song</th><th>Artist</th><th>Actual</th><th>Predicted</th>
+<th>Pipeline score</th><th>Windows</th><th>Explanations</th></tr></thead><tbody>'''
+    (root/'explanations_index.html').write_text(index_html+''.join(index_rows)+'</tbody></table>', encoding='utf-8')
     counts = frame.assign(positive=frame.comprehensiveness.gt(0),
         beats_random=frame.comprehensiveness.gt(frame.random_comprehensiveness_mean)).groupby(
         ['model', 'method', 'erasure_percent']).agg(songs=('validation_row', 'count'),
         positive_drop_songs=('positive', 'sum'), above_random_songs=('beats_random', 'sum'),
         class_flip_rate=('class_flipped', 'mean'), random_class_flip_rate=('random_class_flip_rate', 'mean')).reset_index()
     counts.to_csv(root/'success_and_flip_rates.csv', index=False)
+    flip_rows = []
+    for model in models:
+        for percent in [5, 10, 20]:
+            group = counts.loc[counts.model.eq(model) & counts.erasure_percent.eq(percent)].set_index('method')
+            flip_rows.append(dict(Model=model, Deleted=f'{percent}%',
+                **{'LIME label flips': f"{100*group.loc['LIME', 'class_flip_rate']:.1f}%",
+                   'SHAP label flips': f"{100*group.loc['SHAP', 'class_flip_rate']:.1f}%",
+                   'Random label flips': f"{100*group.loc['LIME', 'random_class_flip_rate']:.1f}%"}))
     summaries = []
     decisions = []
     for model in models:
@@ -100,8 +134,12 @@ def main():
     pd.DataFrame(metrics).to_csv(root/'descriptive_prediction_metrics.csv', index=False)
     per_model = diagnostics.groupby('model').agg(median_lime_fit=('lime_local_fit_r2', 'median'),
         minimum_lime_fit=('lime_local_fit_r2', 'min'), max_shap_residual=('shap_additivity_residual', lambda x: x.abs().max()),
-        unique_perturbations=('unique_texts_scored', 'sum'), neural_windows_scored=('windows_scored', 'sum')).reset_index()
+        unique_scored_texts=('unique_texts_scored', 'sum'), cached_scorer_windows=('windows_scored', 'sum')).reset_index()
     per_model.to_csv(root/'model_diagnostics.csv', index=False)
+    diagnostic_table = per_model.copy()
+    for field in ['median_lime_fit', 'minimum_lime_fit']:
+        diagnostic_table[field] = diagnostic_table[field].map(lambda x: f'{x:.4f}')
+    diagnostic_table['max_shap_residual'] = diagnostic_table.max_shap_residual.map(lambda x: f'{x:.3g}')
     import matplotlib
     matplotlib.use('Agg')
     import matplotlib.pyplot as plt
@@ -127,12 +165,14 @@ def main():
             axis.spines[['top', 'right']].set_visible(False)
         for axis in list(axes.flat)[len(models):]:
             axis.set_visible(False)
-        axes[0, 0].legend(frameon=False)
+        handles, legend_labels = axes[0, 0].get_legend_handles_labels()
+        figure.legend(handles, legend_labels, loc='upper center', bbox_to_anchor=(.5, .93),
+                      ncol=2, frameon=False)
         figure.supylabel('Pipeline score change (percentage points)')
-        figure.supxlabel('Full-song words deleted')
+        figure.supxlabel('Full-song words deleted', y=.06)
         figure.suptitle(f'{title} · {len(selection)} validation songs', fontsize=14)
         figure.text(.5, .015, f'Bars: unadjusted 95% song-bootstrap intervals. * Holm-adjusted p < .05 across {len(stats)} one-sided tests.', ha='center', fontsize=8)
-        figure.tight_layout(rect=(.025, .06, 1, .95))
+        figure.tight_layout(rect=(.025, .11, 1, .95))
         figure.savefig(root/filename, dpi=180)
         plt.close(figure)
     report = f'''# Full-song LIME/SHAP ERASER analysis
@@ -140,6 +180,13 @@ def main():
 Run `{root.name}` evaluated all {len(selection)} previously selected validation songs
 with {len(models)} frozen models. All {len(frame)} method/deletion records passed
 the paired-data, attribution-alignment, and additivity consistency checks.
+The validation-label allocation was {selection.explicitness.value_counts().to_dict()}.
+
+After global Holm correction, {int(random_tests.reject_at_05.sum())} of
+{len(random_tests)} attributed-versus-random comparisons and
+{int(zero_tests.reject_at_05.sum())} of {len(zero_tests)} positive-drop comparisons
+were significant at alpha .05. The decisions below identify the supported
+model, explanation method, and deletion levels.
 
 ## Decisions
 
@@ -164,6 +211,14 @@ not treated as independent songs. No between-model superiority test is performed
 
 ![Full-song effects above random](full_song_above_random.png)
 
+## Changes in actual song predictions
+
+{table(pd.DataFrame(flip_rows))}
+
+These are descriptive label-change rates relative to the original song prediction,
+not error rates against human labels. No separate hypothesis tests are performed
+on these rates. Confidence reductions can occur with or without a label change.
+
 ## What was explained
 
 Entire cleaned songs were explained without truncating them to an evidence window.
@@ -187,13 +242,14 @@ passes over positional word-presence features with an empty-text background.
 Original whitespace was preserved before the common preprocessing function.
 Rankings used signed target-class attributions in descending order. At each
 5%, 10%, and 20% level, deletion counts were rounded up, retaining at least one
-word. {metadata['config']['random_repeats']} random deletions were averaged per
+word. Rankings can include nonpositive attributions if too few positions have
+positive support. {metadata['config']['random_repeats']} random deletions were averaged per
 song and level. LIME and SHAP shared the same random controls, and all models
 used the same song/position selections. Seed: {metadata['config']['seed']}.
 
 ## Explanation diagnostics
 
-{table(per_model.round(6))}
+{table(diagnostic_table)}
 
 Additivity checks verify bookkeeping, not SHAP convergence. Finite explanation
 budgets, one explanation seed, surrogate fit variation, only 30 validation songs,
@@ -207,6 +263,7 @@ model-performance hypothesis on this small validation sample.
 ## Files
 
 - `original_predictions.csv`: all original full-song model predictions and pipeline scores.
+- `explanations_index.html`: links to every model/song's complete-song visual explanations.
 - `eraser_per_song.csv`: attributed/random effects and label flips.
 - `faithfulness_statistics.csv`: every test, confidence interval, and corrected decision.
 - `success_and_flip_rates.csv`: individual-song success counts and song-label flip rates.
