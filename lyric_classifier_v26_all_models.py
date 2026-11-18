@@ -17,6 +17,7 @@ import os
 import json
 import hashlib
 import platform
+import time
 import unicodedata
 import importlib.metadata
 from datetime import datetime, timezone
@@ -116,10 +117,10 @@ RANDOM_SEED = 67
 # Choose "all_models" (hybrid then all three baselines), "hybrid",
 # "bert_cnn_lstm", "lstm_cnn", "roberta", "all_baselines", or "compare".
 # "compare" only reads frozen test predictions; it never trains or touches raw test lyrics.
-EXPERIMENT_MODE = "compare"
+EXPERIMENT_MODE = "lstm_cnn"
 # Independent baseline smoke tests use SMOKE_TEST=True, just like the hybrid.
 # Held-out testing is performed separately with FROZEN_TEST_EVALUATION=True.
-FROZEN_TEST_EVALUATION = True
+FROZEN_TEST_EVALUATION = False
 # Map each trained model to its checkpoint's run folder for frozen evaluation.
 FROZEN_RUN_DIRS = {
     "hybrid": r"C:\Users\Sephie\OneDrive\Desktop\Thesis\actual project\Thesis-Project\experiments\hybrid_v26_20261107T000459Z",          # Set to a new v26 hybrid experiment directory for compare mode
@@ -137,7 +138,10 @@ BASELINE_VOCAB_MIN_FREQ = 2
 BASELINE_LEARNING_RATE = 2e-5  # transformer baselines
 BASELINE_LSTM_LEARNING_RATE = 1e-3
 
-RUN_ID = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+# To resume, set this to the timestamp suffix shared by the interrupted run's
+# folders (for example "20261117T120000Z"). Empty means start a new run.
+RESUME_RUN_ID = ""
+RUN_ID = RESUME_RUN_ID or datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
 RUN_DIR = PROJECT_DIR / "experiments" / f"hybrid_v26_{RUN_ID}"
 MODEL_SAVE_PATH = RUN_DIR / "best_model.pt"
 RUN_FINAL_TEST = False  # Only enable after all model/hyperparameter decisions are frozen.
@@ -656,7 +660,7 @@ def validate(model, loader, criterion=None, *, description="Validation"):
     return (weighted_loss_sum / max(weight_sum, 1e-12),
             float(accuracy_score(actual, predictions)), actual, predictions)
 
-def save_predictions_and_metrics(name, dataframe, actual, predicted):
+def save_predictions_and_metrics(name, dataframe, actual, predicted, run_time_seconds=None, timing_metrics=None):
     RUN_DIR.mkdir(parents=True, exist_ok=True)
     output = dataframe[["song_name", "artist", "text", "explicitness"]].copy().reset_index(drop=True)
     output["actual_id"] = actual
@@ -677,6 +681,10 @@ def save_predictions_and_metrics(name, dataframe, actual, predicted):
             a == i and b == j for a, b in zip(actual, predicted)))
             for i in range(3) for j in range(3) if i != j},
     }
+    if run_time_seconds is not None:
+        metrics["run_time_seconds"] = float(run_time_seconds)
+    if timing_metrics is not None:
+        metrics.update(timing_metrics)
     (RUN_DIR / f"{name}_metrics.json").write_text(json.dumps(metrics, indent=2), encoding="utf-8")
     return metrics
 
@@ -1098,8 +1106,128 @@ def provenance_report(train_df, *, raw_rows, flagged_raw, filename="training_pro
     print("IMPORTANT: Presence of human-label metadata alone does not prove labels were reviewed.")
     return report
 
+def timed_training_call(function, *args):
+    """Measure wall time, waiting for queued CUDA work at both boundaries."""
+    if DEVICE.type == "cuda":
+        torch.cuda.synchronize(DEVICE)
+    started = time.perf_counter()
+    result = function(*args)
+    if DEVICE.type == "cuda":
+        torch.cuda.synchronize(DEVICE)
+    return result, time.perf_counter() - started
+
+
+def training_timing_summary(history, best_epoch, final_validation_seconds):
+    # Older resume checkpoints have no timers: do not invent missing durations.
+    def total(field):
+        values = [row.get(field) for row in history]
+        return sum(values) if all(value is not None for value in values) else None
+    best_row = next((row for row in history if row["epoch"] == best_epoch), {})
+    return {
+        "training_time_seconds": total("training_time_seconds"),
+        "epoch_validation_time_seconds": total("validation_time_seconds"),
+        "total_epoch_time_seconds": total("epoch_time_seconds"),
+        "final_validation_time_seconds": final_validation_seconds,
+        "best_epoch_run_time_seconds": best_row.get("elapsed_run_time_seconds"),
+        "epochs_completed": len(history),
+        "epochs_with_timing": sum("epoch_time_seconds" in row for row in history),
+    }
+
+
+def resume_settings():
+    """Reject changed inputs or training settings before restoring a checkpoint."""
+    keys = ("RANDOM_SEED", "SMOKE_TEST", "SMOKE_TRAIN_ROWS", "SMOKE_VAL_ROWS",
+            "EPOCHS", "BATCH_SIZE", "GRADIENT_ACCUMULATION_STEPS", "MAX_LENGTH",
+            "LEARNING_RATE", "WARMUP_RATIO", "EARLY_STOPPING_PATIENCE",
+            "EARLY_STOPPING_MIN_DELTA", "EXCLUDE_NEEDS_REVISION", "MODEL_NAME",
+            "PIPELINE_VERSION", "MAX_GRAD_NORM", "RUN_PADDING_INVARIANCE_CHECK",
+            "PADDING_TOLERANCE", "PADDING_HARD_FAIL_AFTER_TRAINING")
+    settings = {k: globals()[k] for k in keys}
+    settings.update({k: v for k, v in globals().items()
+                     if k.startswith("BASELINE_") and isinstance(v, (str, int, float, bool))})
+    settings["window_policy"] = window_policy()
+    settings["run_directory"] = RUN_DIR.name
+    settings["inputs"] = {f: file_sha256(resolve_dataset_path(f))
+                          for f in (TRAIN_CSV_FILE, VAL_CSV_FILE, TEST_CSV_FILE)}
+    return settings
+
+
+def prepare_training_directory():
+    if RUN_DIR.exists():
+        if not RESUME_RUN_ID:
+            raise FileExistsError(RUN_DIR)
+        path = RUN_DIR / "resume_checkpoint.pt"
+        if not path.is_file():
+            raise ValueError(f"No resumable checkpoint in {RUN_DIR}. Older runs cannot be resumed exactly.")
+        # Only load trusted local checkpoints: these include Python/NumPy RNG state.
+        state = torch.load(path, map_location="cpu", weights_only=False)
+        if state["settings"] != resume_settings():
+            raise ValueError("Resume refused: dataset or training settings changed")
+        if state.get("completed"):
+            print(f"Skipping completed run: {RUN_DIR}")
+            return True
+    else:
+        RUN_DIR.mkdir(parents=True, exist_ok=False)
+    return False
+
+
+def save_resume_checkpoint(model, optimizer, scheduler, history, best, best_epoch,
+                           stale_epochs, elapsed_seconds):
+    path = RUN_DIR / "resume_checkpoint.pt"
+    # Keep the best weights inside the same atomic checkpoint as training state.
+    best_state = torch.load(MODEL_SAVE_PATH, map_location="cpu", weights_only=True)
+    state = {"settings": resume_settings(), "model": model.state_dict(),
+             "optimizer": optimizer.state_dict(), "scheduler": scheduler.state_dict(),
+             "history": history, "best": float(best), "best_epoch": best_epoch,
+             "stale_epochs": stale_epochs, "elapsed_seconds": elapsed_seconds,
+             "best_model": best_state, "python_rng": random.getstate(),
+             "numpy_rng": np.random.get_state(), "torch_rng": torch.get_rng_state(),
+             "cuda_rng": torch.cuda.get_rng_state_all() if torch.cuda.is_available() else None}
+    temporary = path.with_suffix(".tmp")
+    torch.save(state, temporary)
+    os.replace(temporary, path)
+
+
+def restore_training_state(model, optimizer, scheduler):
+    path = RUN_DIR / "resume_checkpoint.pt"
+    if not RESUME_RUN_ID or not path.is_file():
+        return [], float("-inf"), 0, 0, 0.0
+    state = torch.load(path, map_location="cpu", weights_only=False)
+    if state["settings"] != resume_settings():
+        raise ValueError("Resume refused: dataset or training settings changed")
+    model.load_state_dict(state["model"])
+    optimizer.load_state_dict(state["optimizer"])
+    scheduler.load_state_dict(state["scheduler"])
+    torch.save(state["best_model"], MODEL_SAVE_PATH)
+    pd.DataFrame(state["history"]).to_csv(RUN_DIR / "epoch_history.csv", index=False)
+    random.setstate(state["python_rng"])
+    np.random.set_state(state["numpy_rng"])
+    torch.set_rng_state(state["torch_rng"])
+    if state["cuda_rng"] is not None:
+        if len(state["cuda_rng"]) != torch.cuda.device_count():
+            raise ValueError("Resume requires the same CUDA device count")
+        torch.cuda.set_rng_state_all(state["cuda_rng"])
+    print(f"Resuming after epoch {len(state['history'])}: {RUN_DIR}")
+    return (state["history"], state["best"], state["best_epoch"],
+            state["stale_epochs"], state["elapsed_seconds"])
+
+
+def mark_training_completed():
+    path = RUN_DIR / "resume_checkpoint.pt"
+    state = torch.load(path, map_location="cpu", weights_only=False)
+    state["completed"] = True
+    temporary = path.with_suffix(".tmp")
+    torch.save(state, temporary)
+    os.replace(temporary, path)
+
+
 def main():
     """Run dataset preparation, training, evaluation, inference, and explanations."""
+    # Wall time includes setup, training, and final validation; excludes held-out
+    # testing and explanation demos. perf_counter is monotonic.
+    run_started = time.perf_counter()
+    if prepare_training_directory():
+        return
     set_seed(RANDOM_SEED)
 
     print("Using device:", DEVICE)
@@ -1197,7 +1325,7 @@ def main():
         assert_disjoint_splits(train_df, val_df, test_df)
         print("Partition identity and normalized-text overlap checks passed.")
     # Preserve full cleaned/validated training population provenance before smoke sampling.
-    RUN_DIR.mkdir(parents=True, exist_ok=False)
+    # Directory and resume compatibility were checked before preparing data.
     full_provenance = provenance_report(
         train_df, raw_rows=raw_training_rows, flagged_raw=flagged_rows,
         filename="training_provenance.json")
@@ -1305,8 +1433,7 @@ def main():
         manifest["padding_pretrain"] = padding_invariance_check(model, tokenizer, val_df, phase="pretrain", hard_fail=False)
         (RUN_DIR / "manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
 
-    # Always retrain: corrected preprocessing and masking change model behavior.
-    print("\nFORCE_RETRAIN=True: training a fresh v26 model with early stopping.")
+    print("\nTraining v26 model with early stopping (resume enabled when configured).")
 
     optimizer = AdamW(
         model.parameters(),
@@ -1338,20 +1465,22 @@ def main():
     )
     print("\nStarting training...\n")
 
-    best_val_macro_f1 = float("-inf")
-    best_epoch = 0
-    epoch_history = []
-    epochs_without_improvement = 0
+    epoch_history, best_val_macro_f1, best_epoch, epochs_without_improvement, prior_seconds = restore_training_state(model, optimizer, scheduler)
 
-    for epoch in range(1 if SMOKE_TEST else EPOCHS):
+    for epoch in range(len(epoch_history), 1 if SMOKE_TEST else EPOCHS):
+        if epochs_without_improvement >= EARLY_STOPPING_PATIENCE:
+            break
         print(f"\n========== Epoch {epoch + 1}/{1 if SMOKE_TEST else EPOCHS} ==========")
 
-        train_loss, train_accuracy = train_one_epoch(
+        (train_loss, train_accuracy), training_seconds = timed_training_call(train_one_epoch,
             model, train_loader, optimizer, criterion, scheduler
         )
-        val_loss, val_accuracy, val_actual, val_predictions = validate(
+        (val_loss, val_accuracy, val_actual, val_predictions), validation_seconds = timed_training_call(validate,
             model, val_loader, criterion
         )
+        epoch_seconds = training_seconds + validation_seconds
+        elapsed_seconds = prior_seconds + time.perf_counter() - run_started
+        print(f"Time: training {training_seconds:.2f}s, validation {validation_seconds:.2f}s, epoch {epoch_seconds:.2f}s")
         val_macro_f1 = f1_score(
             val_actual,
             val_predictions,
@@ -1367,7 +1496,11 @@ def main():
 
         epoch_history.append({"epoch": epoch + 1, "train_loss": train_loss,
                               "train_accuracy": train_accuracy, "validation_loss": val_loss,
-                              "validation_accuracy": val_accuracy, "validation_macro_f1": val_macro_f1})
+                              "validation_accuracy": val_accuracy, "validation_macro_f1": val_macro_f1,
+                              "training_time_seconds": training_seconds,
+                              "validation_time_seconds": validation_seconds,
+                              "epoch_time_seconds": epoch_seconds,
+                              "elapsed_run_time_seconds": elapsed_seconds})
         pd.DataFrame(epoch_history).to_csv(RUN_DIR / "epoch_history.csv", index=False)
 
         if val_macro_f1 > best_val_macro_f1 + EARLY_STOPPING_MIN_DELTA:
@@ -1387,6 +1520,9 @@ def main():
                 f"{epochs_without_improvement}/{EARLY_STOPPING_PATIENCE} epoch(s)."
             )
 
+        save_resume_checkpoint(model, optimizer, scheduler, epoch_history,
+                               best_val_macro_f1, best_epoch, epochs_without_improvement,
+                               prior_seconds + time.perf_counter() - run_started)
         if epochs_without_improvement >= EARLY_STOPPING_PATIENCE:
             print(
                 f"\nEarly stopping triggered after epoch {epoch + 1}. "
@@ -1410,12 +1546,12 @@ def main():
     model.eval()
     print(f"\nBest v26 checkpoint loaded from epoch {best_epoch}.")
 
-    (
+    ((
         final_val_loss,
         final_val_accuracy,
         final_val_actual,
         final_val_predictions
-    ) = validate(
+    ), final_validation_seconds) = timed_training_call(validate,
         model,
         val_loader,
         criterion
@@ -1456,7 +1592,16 @@ def main():
         )
     )
 
-    validation_metrics = save_predictions_and_metrics("validation", val_df, final_val_actual, final_val_predictions)
+    if DEVICE.type == "cuda":
+        torch.cuda.synchronize(DEVICE)
+    run_time_seconds = prior_seconds + time.perf_counter() - run_started
+    timing_metrics = training_timing_summary(epoch_history, best_epoch, final_validation_seconds)
+    validation_metrics = save_predictions_and_metrics(
+        "validation", val_df, final_val_actual, final_val_predictions,
+        run_time_seconds=run_time_seconds, timing_metrics=timing_metrics)
+    manifest.update(timing_metrics)
+    manifest["run_time_seconds"] = run_time_seconds
+    print(f"Training run time (setup, training, validation): {run_time_seconds:.2f} seconds")
     print("Saved validation metrics and directional errors:", RUN_DIR / "validation_metrics.json")
     if RUN_FINAL_TEST and not SMOKE_TEST:
         test_actual, test_predictions = evaluate_test_set(model, test_loader)
@@ -1474,6 +1619,7 @@ def main():
     manifest["best_epoch"] = best_epoch
     manifest["best_validation_macro_f1"] = best_val_macro_f1
     (RUN_DIR / "manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
+    mark_training_completed()
     if SMOKE_TEST or not RUN_DEMO_EXPLANATIONS:
         print("Explanation demo skipped; enable RUN_DEMO_EXPLANATIONS when needed.")
         return
@@ -1719,11 +1865,14 @@ def run_baseline(name):
     global RUN_DIR, MODEL_SAVE_PATH, _baseline_manifest
     if name not in BASELINE_NAMES:
         raise ValueError(name)
+    # Use the same timing scope as the hybrid training flow.
+    run_started = time.perf_counter()
     set_seed(RANDOM_SEED)
     frames, paths, raw_rows, flagged = prepare_shared_data()
     train_df, val_df = frames["training"], frames["validation"]
     RUN_DIR = PROJECT_DIR / "experiments" / f"{name}_v26_{RUN_ID}"
-    RUN_DIR.mkdir(parents=True, exist_ok=False)
+    if prepare_training_directory():
+        return
     MODEL_SAVE_PATH = RUN_DIR / "best_model.pt"
     full_provenance = provenance_report(train_df, raw_rows=raw_rows, flagged_raw=flagged)
     if SMOKE_TEST:
@@ -1781,18 +1930,26 @@ def run_baseline(name):
     if RUN_PADDING_INVARIANCE_CHECK and name != "lstm_cnn":
         _baseline_manifest["padding_pretrain"] = padding_invariance_check(model, tokenizer, val_df, phase="pretrain", hard_fail=False)
         write_baseline_manifest()
-    best = float("-inf")
-    best_epoch = 0
-    no_improvement = 0
-    history = []
-    for epoch in range(1, epochs+1):
+    history, best, best_epoch, no_improvement, prior_seconds = restore_training_state(model, optimizer, scheduler)
+    for epoch in range(len(history)+1, epochs+1):
+        if no_improvement >= EARLY_STOPPING_PATIENCE:
+            break
         print(f"\n{name} epoch {epoch}/{epochs}")
-        train_loss, train_acc = train_one_epoch(model, train_loader, optimizer, criterion, scheduler)
-        val_loss, val_acc, actual, pred = validate(model, val_loader, criterion)
+        (train_loss, train_acc), training_seconds = timed_training_call(
+            train_one_epoch, model, train_loader, optimizer, criterion, scheduler)
+        (val_loss, val_acc, actual, pred), validation_seconds = timed_training_call(
+            validate, model, val_loader, criterion)
+        epoch_seconds = training_seconds + validation_seconds
+        elapsed_seconds = prior_seconds + time.perf_counter() - run_started
+        print(f"Time: training {training_seconds:.2f}s, validation {validation_seconds:.2f}s, epoch {epoch_seconds:.2f}s")
         score = float(f1_score(actual, pred, labels=[0, 1, 2], average="macro", zero_division=0))
         print(f"train loss {train_loss:.4f}, val loss {val_loss:.4f}, val Macro-F1 {score:.4f}")
         history.append({"epoch": epoch, "train_loss": train_loss, "train_accuracy": train_acc,
-                        "validation_loss": val_loss, "validation_accuracy": val_acc, "validation_macro_f1": score})
+                        "validation_loss": val_loss, "validation_accuracy": val_acc, "validation_macro_f1": score,
+                        "training_time_seconds": training_seconds,
+                        "validation_time_seconds": validation_seconds,
+                        "epoch_time_seconds": epoch_seconds,
+                        "elapsed_run_time_seconds": elapsed_seconds})
         pd.DataFrame(history).to_csv(RUN_DIR / "epoch_history.csv", index=False)
         if score > best + EARLY_STOPPING_MIN_DELTA:
             best = score
@@ -1802,13 +1959,24 @@ def run_baseline(name):
             print("Best checkpoint saved:", MODEL_SAVE_PATH)
         else:
             no_improvement += 1
-            if no_improvement >= EARLY_STOPPING_PATIENCE:
-                print("Early stopping")
-                break
+        save_resume_checkpoint(model, optimizer, scheduler, history, best, best_epoch,
+                               no_improvement, prior_seconds + time.perf_counter() - run_started)
+        if no_improvement >= EARLY_STOPPING_PATIENCE:
+            print("Early stopping")
+            break
     model.load_state_dict(torch.load(MODEL_SAVE_PATH, map_location=DEVICE, weights_only=True))
     model.eval()
-    _, _, actual, pred = validate(model, val_loader, criterion)
-    val_metrics = save_predictions_and_metrics("validation", val_df, actual, pred)
+    (_, _, actual, pred), final_validation_seconds = timed_training_call(validate, model, val_loader, criterion)
+    if DEVICE.type == "cuda":
+        torch.cuda.synchronize(DEVICE)
+    run_time_seconds = prior_seconds + time.perf_counter() - run_started
+    timing_metrics = training_timing_summary(history, best_epoch, final_validation_seconds)
+    val_metrics = save_predictions_and_metrics(
+        "validation", val_df, actual, pred, run_time_seconds=run_time_seconds,
+        timing_metrics=timing_metrics)
+    _baseline_manifest.update(timing_metrics)
+    _baseline_manifest["run_time_seconds"] = run_time_seconds
+    print(f"Training run time (setup, training, validation): {run_time_seconds:.2f} seconds")
     if RUN_PADDING_INVARIANCE_CHECK and name != "lstm_cnn":
         _baseline_manifest["padding_posttrain"] = padding_invariance_check(
             model, tokenizer, val_df, phase="posttrain", hard_fail=PADDING_HARD_FAIL_AFTER_TRAINING)
@@ -1817,6 +1985,7 @@ def run_baseline(name):
                                "optimizer_steps_completed": len(history)*steps_per_epoch,
                                "checkpoint_sha256": file_sha256(MODEL_SAVE_PATH)})
     write_baseline_manifest()
+    mark_training_completed()
     print(f"Completed {name}. Frozen test remains untouched. Run directory: {RUN_DIR}")
 
 
@@ -1963,6 +2132,12 @@ def evaluate_frozen_checkpoints():
 
 def main_v26():
     global RUN_DIR, MODEL_SAVE_PATH
+    if RESUME_RUN_ID and EXPERIMENT_MODE == "compare":
+        raise ValueError("RESUME_RUN_ID is only for training; clear it for comparison")
+    if RESUME_RUN_ID and not any(
+            (PROJECT_DIR / "experiments" / f"{name}_v26_{RUN_ID}").is_dir()
+            for name in ALL_NAMES):
+        raise ValueError(f"No training folders found for RESUME_RUN_ID={RESUME_RUN_ID!r}")
     if EXPERIMENT_MODE == "hybrid":
         if FROZEN_TEST_EVALUATION:
             raise ValueError("Use EXPERIMENT_MODE='compare' for frozen test evaluation")
