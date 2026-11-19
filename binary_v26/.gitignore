@@ -1,0 +1,9 @@
+__pycache__/
+/.lyric_studio/
+/build/
+/dist/
+/experiments/
+/eraser_results/
+/eraser_lime_shap_results/
+/full_song_eraser_results/
+/explanations_binary/

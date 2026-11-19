@@ -1,0 +1,17 @@
+torch
+transformers
+scikit-learn
+pandas
+numpy
+tqdm
+datasets
+accelerate
+lime
+shap
+transformers
+tokenizers
+huggingface-hub>=1.5.0,<2.0
+pyarrow>=7.0,<26,!=25.0.0
+rapidfuzz
+ttkbootstrap>=2.2
+pyinstaller==6.22.3; platform_system == "Windows"
