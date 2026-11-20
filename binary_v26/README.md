@@ -120,7 +120,7 @@ The supplied CSVs use Spotify's Explicit flag as the target. Their row counts ar
 
 | Dataset    | Number of Lyrics | Purpose                    |
 | ---------- | ---------------: | -------------------------- |
-| Training   |           5,988 | Model training             |
+| Training   |           39,959 | Model training             |
 | Validation |            5,000 | Model selection and tuning |
 | Test       |            4,998 | Final evaluation           |
 

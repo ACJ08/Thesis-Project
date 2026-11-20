@@ -43,12 +43,14 @@ def main():
     parser.add_argument("--spotify", type=Path, default=Path.home() /
                         ".cache/kagglehub/datasets/devdope/900k-spotify/versions/3/spotify_dataset.csv")
     parser.add_argument("--data-dir", type=Path, default=Path(__file__).resolve().parent.parent / "data")
+    parser.add_argument("--split", choices=SPLITS, action="append",
+                        help="Convert only the selected split; repeat for multiple splits.")
     args = parser.parse_args()
     csv.field_size_limit(10_000_000)
 
     datasets = {}
     wanted = set()
-    for split in SPLITS:
+    for split in dict.fromkeys(args.split or SPLITS):
         path = args.data_dir / f"{split}_Cleaned.csv"
         with path.open(encoding="utf-8-sig", newline="") as source:
             reader = csv.DictReader(source, strict=True)
