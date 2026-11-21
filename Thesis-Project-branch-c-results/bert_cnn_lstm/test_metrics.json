@@ -1,0 +1,33 @@
+{
+  "accuracy": 0.8629451780712285,
+  "macro_f1": 0.8538471406290589,
+  "weighted_f1": 0.8656081962479661,
+  "per_class": {
+    "Safe": {
+      "precision": 0.9455782312925171,
+      "recall": 0.8411497730711044,
+      "f1": 0.8903122497998399,
+      "support": 3305
+    },
+    "Explicit": {
+      "precision": 0.7448979591836735,
+      "recall": 0.9054932073242764,
+      "f1": 0.8173820314582778,
+      "support": 1693
+    }
+  },
+  "confusion_matrix": [
+    [
+      2780,
+      525
+    ],
+    [
+      160,
+      1533
+    ]
+  ],
+  "directional_errors": {
+    "Safe_to_Explicit": 525,
+    "Explicit_to_Safe": 160
+  }
+}

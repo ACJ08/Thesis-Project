@@ -1,0 +1,17 @@
+model,true_label,predicted_label,count
+hybrid,Safe,Safe,2848
+hybrid,Safe,Explicit,457
+hybrid,Explicit,Safe,207
+hybrid,Explicit,Explicit,1486
+bert_cnn_lstm,Safe,Safe,2780
+bert_cnn_lstm,Safe,Explicit,525
+bert_cnn_lstm,Explicit,Safe,160
+bert_cnn_lstm,Explicit,Explicit,1533
+lstm_cnn,Safe,Safe,2766
+lstm_cnn,Safe,Explicit,539
+lstm_cnn,Explicit,Safe,172
+lstm_cnn,Explicit,Explicit,1521
+roberta,Safe,Safe,2779
+roberta,Safe,Explicit,526
+roberta,Explicit,Safe,159
+roberta,Explicit,Explicit,1534
