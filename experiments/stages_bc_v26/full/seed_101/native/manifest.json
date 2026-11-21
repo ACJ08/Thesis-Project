@@ -1,0 +1,24 @@
+{
+  "arm": "native",
+  "head": "native",
+  "objective": "window",
+  "context": 512,
+  "input_sha256": {
+    "training": "aa0ebc847733df9db0e3afc551e949995ab7225dd928d2027dffc18944f0dfcf",
+    "validation": "0c4bc601229dbbdd508a670808ae084e6a16badb6e8aed54a01c40f0398b4a12",
+    "test": "70ec6f7e6d79920d0c135a2c165b165f75a8140afbbc370a2cb48e2eb8c635f6"
+  },
+  "training_rows": 39959,
+  "validation_rows": 5000,
+  "seed": 101,
+  "epochs": 3,
+  "songs_per_step": 8,
+  "overlap": 64,
+  "learning_rate": 2e-05,
+  "warmup_ratio": 0.1,
+  "selection": "maximum-severity validation macro F1",
+  "torch": "2.13.0+cu132",
+  "transformers": "5.5.0",
+  "runner_sha256": "5781e8b6d852c6de4b01c2671275df3161d9a4afe6c4eb9e43bc80fd0592b059",
+  "backbone": "roberta-base"
+}
