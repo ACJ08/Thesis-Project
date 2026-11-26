@@ -53,7 +53,7 @@ def train_or_compare(job):
         records = pd.read_csv(folder / 'model_comparison.csv').to_dict('records')
         charts = [{'title': 'Held-out model comparison', 'kind': 'bar', 'labels': [r['model'] for r in records],
                    'series': [{'name': metric, 'y': [r[metric] for r in records]}
-                              for metric in ('test_accuracy', 'test_macro_f1', 'test_weighted_f1')]}]
+                              for metric in ('test_accuracy', 'test_macro_f1')]}]
         confusion = pd.read_csv(folder / 'model_comparison_confusion.csv')
         for name in clf.ALL_NAMES:
             subset = confusion.loc[confusion['model'].eq(name)]
@@ -83,7 +83,7 @@ def train_or_compare(job):
                          "Macro F1": metrics["macro_f1"], "Weighted F1": metrics["weighted_f1"]})
     if rows:
         charts.insert(0, {'title': 'Validation model comparison', 'kind': 'bar', 'labels': [r['Model'] for r in rows],
-                          'series': [{'name': metric, 'y': [r[metric] for r in rows]} for metric in ('Accuracy', 'Macro F1', 'Weighted F1')]})
+                          'series': [{'name': metric, 'y': [r[metric] for r in rows]} for metric in ('Accuracy', 'Macro F1')]})
     return {'message': f'Run ID {clf.RUN_ID}\nResults in {folder}', 'output_paths': output_paths,
             'charts': charts, 'tables': {'Validation metrics': rows}}
 
